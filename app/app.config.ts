@@ -1,8 +1,13 @@
 export default defineAppConfig({
-  ui: {
-    colors: {
-      primary: 'green',
-      neutral: 'slate'
+    ui: {
+        colors: {
+            primary: 'amber',
+            neutral: 'stone'
+        },
+        pageCard: {
+            slots: {
+                title: 'text-2xl font-bold tracking-tight'
+            }
+        }
     }
-  }
 })

@@ -1,76 +1,86 @@
+<script setup lang="ts">
+definePageMeta({
+    layout: false
+})
+
+const { setRole } = useDemoAuth()
+const router = useRouter()
+
+const selectedRole = ref<SystemRole | undefined>(undefined)
+
+const roleOptions: { label: string, value: SystemRole, description: string, icon: string }[] = [
+    { label: 'Administrator', value: 'Administrator', description: 'Full system access & configuration', icon: 'i-lucide-shield-check' },
+    { label: 'Front Desk', value: 'Front Desk', description: 'Reservations, check-in & check-out', icon: 'i-lucide-concierge-bell' },
+    { label: 'Billing', value: 'Billing', description: 'Folios, charges & payments', icon: 'i-lucide-receipt' },
+    { label: 'Housekeeping', value: 'Housekeeping', description: 'Room status & task management', icon: 'i-lucide-spray-can' }
+]
+
+const handleLogin = () => {
+    if (!selectedRole.value) return
+    setRole(selectedRole.value)
+    router.push('/dashboard')
+}
+</script>
 <template>
-  <div>
-    <UPageHero
-      title="Nuxt Starter Template"
-      description="A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours."
-      :links="[{
-        label: 'Get started',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank',
-        trailingIcon: 'i-lucide-arrow-right',
-        size: 'xl'
-      }, {
-        label: 'Use this template',
-        to: 'https://github.com/nuxt-ui-templates/starter',
-        target: '_blank',
-        icon: 'i-simple-icons-github',
-        size: 'xl',
-        color: 'neutral',
-        variant: 'subtle'
-      }]"
-    />
+    <div class="fixed inset-0 flex justify-center items-center bg-neutral-50 dark:bg-neutral-950">
+        <UCard class="w-full max-w-sm">
+            <header class="space-y-3 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <UIcon name="i-lucide-hotel" class="size-8 text-primary" />
+                    <span class="text-2xl font-black tracking-tight">Presi<span
+                            class="text-primary">dio</span></span>
+                </div>
+                <div class="text-sm text-muted">Hotel Property Management System</div>
+            </header>
+            <USeparator class="my-6" />
+            <main class="space-y-4">
+                <UFormField label="Username">
+                    <UInput placeholder="Enter your username" variant="soft" size="lg" class="w-full" />
+                </UFormField>
+                <UFormField label="Password">
+                    <UInput placeholder="Enter your password" variant="soft" size="lg" type="password" class="w-full" />
+                </UFormField>
+                <UFormField label="Department Role">
+                    <USelect v-model="selectedRole" placeholder="Select your role"
+                        :items="roleOptions.map(r => ({ label: r.label, value: r.value }))" variant="soft" size="lg"
+                        class="w-full" />
+                </UFormField>
 
-    <UPageSection
-      id="features"
-      title="Everything you need to build modern Nuxt apps"
-      description="Start with a solid foundation. This template includes all the essentials for building production-ready applications with Nuxt UI's powerful component system."
-      :features="[{
-        icon: 'i-lucide-rocket',
-        title: 'Production-ready from day one',
-        description: 'Pre-configured with TypeScript, ESLint, Tailwind CSS, and all the best practices. Focus on building features, not setting up tooling.'
-      }, {
-        icon: 'i-lucide-palette',
-        title: 'Beautiful by default',
-        description: 'Leveraging Nuxt UI\'s design system with automatic dark mode, consistent spacing, and polished components that look great out of the box.'
-      }, {
-        icon: 'i-lucide-zap',
-        title: 'Lightning fast',
-        description: 'Optimized for performance with SSR/SSG support, automatic code splitting, and edge-ready deployment. Your users will love the speed.'
-      }, {
-        icon: 'i-lucide-blocks',
-        title: '100+ components included',
-        description: 'Access Nuxt UI\'s comprehensive component library. From forms to navigation, everything is accessible, responsive, and customizable.'
-      }, {
-        icon: 'i-lucide-code-2',
-        title: 'Developer experience first',
-        description: 'Auto-imports, hot module replacement, and TypeScript support. Write less boilerplate and ship more features.'
-      }, {
-        icon: 'i-lucide-shield-check',
-        title: 'Built for scale',
-        description: 'Enterprise-ready architecture with proper error handling, SEO optimization, and security best practices built-in.'
-      }]"
-    />
+                <!-- Role preview card -->
+                <Transition name="fade" mode="out-in">
+                    <div v-if="selectedRole"
+                        class="flex items-center gap-3 p-3 rounded-lg bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-800">
+                        <UIcon
+                            :name="roleOptions.find(r => r.value === selectedRole)?.icon || 'i-lucide-user'"
+                            class="size-5 text-primary shrink-0" />
+                        <div>
+                            <div class="text-sm font-semibold text-primary">{{ selectedRole }}</div>
+                            <div class="text-xs text-muted">
+                                {{ roleOptions.find(r => r.value === selectedRole)?.description }}
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
 
-    <UPageSection>
-      <UPageCTA
-        title="Ready to build your next Nuxt app?"
-        description="Join thousands of developers building with Nuxt and Nuxt UI. Get this template and start shipping today."
-        variant="subtle"
-        :links="[{
-          label: 'Start building',
-          to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-          target: '_blank',
-          trailingIcon: 'i-lucide-arrow-right',
-          color: 'neutral'
-        }, {
-          label: 'View on GitHub',
-          to: 'https://github.com/nuxt-ui-templates/starter',
-          target: '_blank',
-          icon: 'i-simple-icons-github',
-          color: 'neutral',
-          variant: 'outline'
-        }]"
-      />
-    </UPageSection>
-  </div>
+                <UButton label="Login" size="lg" class="justify-center" block :disabled="!selectedRole"
+                    @click="handleLogin" />
+            </main>
+            <footer class="text-center mt-8">
+                <ULink as="button" class="text-sm">Forgot Password?</ULink>
+            </footer>
+        </UCard>
+    </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition: all 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+</style>
