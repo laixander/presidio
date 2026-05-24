@@ -121,7 +121,7 @@ const headerActions = computed(() => {
 
         <div
             class="flex-1 flex flex-col overflow-hidden lg:peer-data-[variant=floating]:my-4 peer-data-[variant=inset]:m-4 lg:peer-data-[variant=inset]:not-peer-data-[collapsible=offcanvas]:ms-0 peer-data-[variant=inset]:rounded-xl peer-data-[variant=inset]:shadow-sm peer-data-[variant=inset]:ring peer-data-[variant=inset]:ring-default bg-default">
-            <div class="h-(--ui-header-height) shrink-0 flex items-center px-4" :class="[
+            <div class="h-(--ui-header-height) shrink-0 flex items-center px-4 sm:pe-6" :class="[
                 variant !== 'floating' && 'border-b border-default',
                 side === 'right' && 'justify-end'
             ]">

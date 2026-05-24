@@ -8,6 +8,7 @@ import { useLogger } from './useLogger'
 
 export const useAppLogger = () => {
     const userLogger = useLogger('users')
+    const roomLogger = useLogger('rooms')
 
     return {
         // ============================================================================
@@ -28,6 +29,19 @@ export const useAppLogger = () => {
                 isActivating ? 'Activated' : 'Deactivated',
                 'info'
             )
+        },
+
+        // ============================================================================
+        // Rooms
+        // ============================================================================
+        logRoomAdded(number: string | number) {
+            roomLogger.addLog(`Added room: ${number}`, 'Created', 'success')
+        },
+        logRoomUpdated(number: string | number) {
+            roomLogger.addLog(`Updated room: ${number}`, 'Updated', 'warn')
+        },
+        logRoomDeleted(number: string | number) {
+            roomLogger.addLog(`Deleted room: ${number}`, 'Deleted', 'error')
         }
     }
 }
