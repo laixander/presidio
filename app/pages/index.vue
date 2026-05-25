@@ -23,7 +23,7 @@ const handleLogin = () => {
 </script>
 <template>
     <div class="fixed inset-0 flex justify-center items-center bg-neutral-50 dark:bg-neutral-950">
-        <UCard class="w-full max-w-sm">
+        <UCard class="w-full max-w-sm shadow-sm">
             <header class="space-y-3 text-center">
                 <div class="flex items-center justify-center gap-2">
                     <UIcon name="i-lucide-hotel" class="size-8 text-primary" />

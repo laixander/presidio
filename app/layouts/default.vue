@@ -107,8 +107,7 @@ const headerActions = computed(() => {
                 :ui="{
                     root: 'gap-2.5',
                     label: 'text-default uppercase tracking-widest py-2.5',
-                    link: isCollapsed ? 'flex-col gap-1' : 'p-2.5',
-                    linkLabel: isCollapsed ? 'block text-[10px]/3 text-center' : undefined,
+                    link: 'p-2.5',
                     list: 'space-y-0.5'
                 }" />
             <template #footer>
