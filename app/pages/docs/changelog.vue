@@ -33,6 +33,21 @@ interface ChangelogEntry {
 const changelogs: ChangelogEntry[] = [
     {
         date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        version: 'v1.0.0',
+        title: 'Full System Completion',
+        description: 'Completed all operational modules for the Presidio PMS, including a powerful automated simulation engine to demonstrate system capabilities under load.',
+        changes: [
+            { type: 'feature', text: 'Built Front Desk Module: Guest directory, unified Reservations list, and an interactive Reservation Details page.' },
+            { type: 'feature', text: 'Built Billing Module: Folios split-ledger layout, Charge/Payment modals, and dynamic header actions.' },
+            { type: 'feature', text: 'Built Housekeeping Module: Visual Room Status grid, smart Room Cards, and task assignment queue.' },
+            { type: 'feature', text: 'Built Simulation Engine: Fully automated background event generator for bookings, check-ins, charges, check-outs, and room cleaning.' },
+            { type: 'feature', text: 'Added Engine Control Panel with transport controls, tick speed adjustments, and event probability sliders.' },
+            { type: 'feature', text: 'Added real-time Simulation Activity Logs feed.' },
+            { type: 'refactor', text: 'Implemented Vue Teleport for dynamic header actions across module detail pages.' }
+        ]
+    },
+    {
+        date: 'May 24, 2026',
         version: 'v0.1.0',
         title: 'Core Modules & Dashboard',
         description: 'Full implementation of the hotel operations dashboard, room management module, data stores, and reusable component library.',

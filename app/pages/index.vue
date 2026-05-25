@@ -18,7 +18,7 @@ const roleOptions: { label: string, value: SystemRole, description: string, icon
 const handleLogin = () => {
     if (!selectedRole.value) return
     setRole(selectedRole.value)
-    router.push('/dashboard')
+    router.push('/admin')
 }
 </script>
 <template>

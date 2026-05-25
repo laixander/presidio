@@ -120,6 +120,7 @@ export interface Reservation {
   id: number
   bookingRef: string
   guestId: number
+  roomTypeId: number
   roomId: number | null
   checkInDate: string
   checkOutDate: string

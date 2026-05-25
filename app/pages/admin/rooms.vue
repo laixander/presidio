@@ -16,6 +16,7 @@ import ConfirmationModal from '~/components/ConfirmationModal.vue'
 // ============================================================================
 definePageMeta({
     title: 'Room Management',
+    layout: 'dashboard',
     isTable: true,
     headerActions: [
         { label: 'History', icon: 'i-lucide-history', event: 'viewRoomLogs', variant: 'soft' },
