@@ -18,7 +18,19 @@ const roleOptions: { label: string, value: SystemRole, description: string, icon
 const handleLogin = () => {
     if (!selectedRole.value) return
     setRole(selectedRole.value)
-    router.push('/admin')
+    
+    // Redirect based on role
+    if (selectedRole.value === 'Administrator') {
+        router.push('/admin')
+    } else if (selectedRole.value === 'Front Desk') {
+        router.push('/frontdesk')
+    } else if (selectedRole.value === 'Billing') {
+        router.push('/billing')
+    } else if (selectedRole.value === 'Housekeeping') {
+        router.push('/housekeeping')
+    } else {
+        router.push('/')
+    }
 }
 </script>
 <template>

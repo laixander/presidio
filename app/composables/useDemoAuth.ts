@@ -10,10 +10,12 @@ import type { SystemRole } from '~/types'
 export type { SystemRole } from '~/types'
 
 const STORAGE_KEY = 'presidio-auth-role'
+const STORAGE_PAGES_KEY = 'presidio-auth-pages'
 
 export const useDemoAuth = () => {
     // Default to null — user must select a role on the login page
     const currentRole = useState<SystemRole | null>('presidio-auth-role', () => null)
+    const showAllPages = useState<boolean>('presidio-auth-pages', () => false)
     const isHydrated = ref(false)
 
     const load = () => {
@@ -21,6 +23,11 @@ export const useDemoAuth = () => {
         const storedRole = localStorage.getItem(STORAGE_KEY) as SystemRole | null
         if (storedRole) {
             currentRole.value = storedRole
+        }
+        
+        const storedPages = localStorage.getItem(STORAGE_PAGES_KEY)
+        if (storedPages !== null) {
+            showAllPages.value = storedPages === 'true'
         }
 
         isHydrated.value = true
@@ -48,13 +55,22 @@ export const useDemoAuth = () => {
         }
     }
 
+    const setShowAllPages = (show: boolean) => {
+        showAllPages.value = show
+        if (import.meta.client) {
+            localStorage.setItem(STORAGE_PAGES_KEY, String(show))
+        }
+    }
+
     const isLoggedIn = computed(() => currentRole.value !== null)
 
     return {
         currentRole,
+        showAllPages,
         isHydrated,
         isLoggedIn,
         setRole,
+        setShowAllPages,
         logout
     }
 }

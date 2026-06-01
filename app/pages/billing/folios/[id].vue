@@ -38,6 +38,9 @@ const folio = computed(() => foliosStore.getById(folioId.value))
 const reservation = computed(() => folio.value ? reservationsStore.getById(folio.value.reservationId) : undefined)
 const guest = computed(() => reservation.value ? guestsStore.getById(reservation.value.guestId) : undefined)
 
+const authStore = useDemoAuth()
+const isAuthorized = computed(() => ['Administrator', 'Billing'].includes(authStore.currentRole.value ?? ''))
+
 // Collections
 const charges = computed(() => foliosStore.getChargesForFolio(folioId.value))
 const payments = computed(() => foliosStore.getPaymentsForFolio(folioId.value))
@@ -129,142 +132,146 @@ const paymentColumns: TableColumn<Payment>[] = [
 </script>
 
 <template>
-    <div v-if="folio" class="space-y-6">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="flex items-center gap-4">
-                <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="router.push('/billing')" />
-                <div>
-                    <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-bold">Folio {{ folio.folioNumber }}</h1>
-                        <StatusBadge :status="folio.status" />
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Billing staff or an Administrator to view Folio details." icon="i-lucide-lock" />
+
+    <template v-else>
+        <div v-if="folio" class="space-y-6">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="router.push('/billing')" />
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h1 class="text-2xl font-bold">Folio {{ folio.folioNumber }}</h1>
+                            <StatusBadge :status="folio.status" />
+                        </div>
+                        <div v-if="guest && reservation" class="text-muted mt-1 text-sm flex items-center gap-2">
+                            <GuestAvatar :guest="guest" size="sm" />
+                            <span>{{ guest.firstName }} {{ guest.lastName }}</span>
+                            <span class="text-neutral-300 mx-1">•</span>
+                            <span>Ref: {{ reservation.bookingRef }}</span>
+                        </div>
                     </div>
-                    <div v-if="guest && reservation" class="text-muted mt-1 text-sm flex items-center gap-2">
-                        <GuestAvatar :guest="guest" size="sm" />
-                        <span>{{ guest.firstName }} {{ guest.lastName }}</span>
-                        <span class="text-neutral-300 mx-1">•</span>
-                        <span>Ref: {{ reservation.bookingRef }}</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-sm text-muted uppercase tracking-wider font-semibold">Balance Due</div>
+                        <div class="text-3xl font-bold font-mono" :class="folio.balance > 0 ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'">
+                            {{ formatCurrency(folio.balance) }}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <ClientOnly>
+                <Teleport to="#header-actions-teleport">
+                    <UButton 
+                        v-if="folio.status === 'Open'"
+                        label="Post Charge" 
+                        icon="i-lucide-plus" 
+                        color="primary" variant="soft"
+                        @click="showChargeModal = true" 
+                    />
+                    <UButton 
+                        v-if="folio.status === 'Open'"
+                        label="Apply Payment" 
+                        icon="i-lucide-banknote" 
+                        color="primary" variant="soft"
+                        @click="showPaymentModal = true" 
+                    />
+                    <UButton 
+                        v-if="folio.status === 'Open'"
+                        label="Settle Folio" 
+                        icon="i-lucide-check-circle" 
+                        color="primary" 
+                        :disabled="folio.balance > 0"
+                        @click="handleSettleFolio" 
+                    />
+                    <UButton 
+                        v-if="folio.status === 'Settled' || folio.status === 'Closed'"
+                        label="Print Invoice" 
+                        icon="i-lucide-printer" 
+                        color="neutral" 
+                        variant="outline"
+                    />
+                </Teleport>
+            </ClientOnly>
             
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <div class="text-sm text-muted uppercase tracking-wider font-semibold">Balance Due</div>
-                    <div class="text-3xl font-bold font-mono" :class="folio.balance > 0 ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'">
-                        {{ formatCurrency(folio.balance) }}
-                    </div>
-                </div>
+            <!-- Split View: Charges & Payments -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Charges Table -->
+                <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="shadow-sm">
+                    <template #header>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 font-semibold">
+                                <UIcon name="i-lucide-receipt-text" class="text-primary size-5" />
+                                Posted Charges
+                            </div>
+                            <UBadge variant="soft" color="neutral">{{ charges.length }}</UBadge>
+                        </div>
+                    </template>
+                    <UTable :columns="chargeColumns" :data="charges">
+                        <template #empty>
+                            <div class="p-8 text-center text-muted text-sm flex flex-col items-center">
+                                <UIcon name="i-lucide-file-x" class="size-8 text-neutral-300 mb-2" />
+                                No charges have been posted yet.
+                            </div>
+                        </template>
+                    </UTable>
+                    <template #footer>
+                        <div class="text-right font-semibold text-sm">
+                            Total Charges: <span class="font-mono ml-2">{{ formatCurrency(totalCharges) }}</span>
+                        </div>
+                    </template>
+                </UCard>
+
+                <!-- Payments Table -->
+                <UCard variant="subtle" :ui="{ root: 'flex flex-col flex-1 min-h-0', body: 'p-0 sm:p-0 flex-1' }" class="shadow-sm">
+                    <template #header>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 font-semibold">
+                                <UIcon name="i-lucide-wallet" class="text-success size-5" />
+                                Applied Payments
+                            </div>
+                            <UBadge variant="soft" color="neutral">{{ payments.length }}</UBadge>
+                        </div>
+                    </template>
+                    <UTable :columns="paymentColumns" :data="payments">
+                        <template #empty>
+                            <div class="p-8 text-center text-muted text-sm flex flex-col items-center">
+                                <UIcon name="i-lucide-credit-card" class="size-8 text-neutral-300 mb-2" />
+                                No payments have been applied yet.
+                            </div>
+                        </template>
+                    </UTable>
+                    <template #footer>
+                        <div class="text-right font-semibold text-sm">
+                            Total Payments: <span class="font-mono ml-2" :class="totalPayments > 0 ? 'text-success-600 dark:text-success-400' : ''">{{ totalPayments > 0 ? '- ' : '' }}{{ formatCurrency(totalPayments) }}</span>
+                        </div>
+                    </template>
+                </UCard>
             </div>
-        </div>
 
-        <ClientOnly>
-            <Teleport to="#header-actions-teleport">
-                <UButton 
-                    v-if="folio.status === 'Open'"
-                    label="Post Charge" 
-                    icon="i-lucide-plus" 
-                    color="primary" variant="soft"
-                    @click="showChargeModal = true" 
-                />
-                <UButton 
-                    v-if="folio.status === 'Open'"
-                    label="Apply Payment" 
-                    icon="i-lucide-banknote" 
-                    color="primary" variant="soft"
-                    @click="showPaymentModal = true" 
-                />
-                <UButton 
-                    v-if="folio.status === 'Open'"
-                    label="Settle Folio" 
-                    icon="i-lucide-check-circle" 
-                    color="primary" 
-                    :disabled="folio.balance > 0"
-                    @click="handleSettleFolio" 
-                />
-                <UButton 
-                    v-if="folio.status === 'Settled' || folio.status === 'Closed'"
-                    label="Print Invoice" 
-                    icon="i-lucide-printer" 
-                    color="neutral" 
-                    variant="outline"
-                />
-            </Teleport>
-        </ClientOnly>
-        
-        <!-- Split View: Charges & Payments -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChargeModal 
+                v-model:open="showChargeModal" 
+                :folioId="folio.id"
+                @submit="handlePostCharge" 
+            />
             
-            <!-- Charges Table -->
-            <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="shadow-sm">
-                <template #header>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 font-semibold">
-                            <UIcon name="i-lucide-receipt-text" class="text-primary size-5" />
-                            Posted Charges
-                        </div>
-                        <UBadge variant="soft" color="neutral">{{ charges.length }}</UBadge>
-                    </div>
-                </template>
-                <UTable :columns="chargeColumns" :data="charges">
-                    <template #empty>
-                        <div class="p-8 text-center text-muted text-sm flex flex-col items-center">
-                            <UIcon name="i-lucide-file-x" class="size-8 text-neutral-300 mb-2" />
-                            No charges have been posted yet.
-                        </div>
-                    </template>
-                </UTable>
-                <template #footer>
-                    <div class="text-right font-semibold text-sm">
-                        Total Charges: <span class="font-mono ml-2">{{ formatCurrency(totalCharges) }}</span>
-                    </div>
-                </template>
-            </UCard>
-
-            <!-- Payments Table -->
-            <UCard variant="subtle" :ui="{ root: 'flex flex-col flex-1 min-h-0', body: 'p-0 sm:p-0 flex-1' }" class="shadow-sm">
-                <template #header>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 font-semibold">
-                            <UIcon name="i-lucide-wallet" class="text-success size-5" />
-                            Applied Payments
-                        </div>
-                        <UBadge variant="soft" color="neutral">{{ payments.length }}</UBadge>
-                    </div>
-                </template>
-                <UTable :columns="paymentColumns" :data="payments">
-                    <template #empty>
-                        <div class="p-8 text-center text-muted text-sm flex flex-col items-center">
-                            <UIcon name="i-lucide-credit-card" class="size-8 text-neutral-300 mb-2" />
-                            No payments have been applied yet.
-                        </div>
-                    </template>
-                </UTable>
-                <template #footer>
-                    <div class="text-right font-semibold text-sm">
-                        Total Payments: <span class="font-mono ml-2" :class="totalPayments > 0 ? 'text-success-600 dark:text-success-400' : ''">{{ totalPayments > 0 ? '- ' : '' }}{{ formatCurrency(totalPayments) }}</span>
-                    </div>
-                </template>
-            </UCard>
+            <PaymentModal 
+                v-model:open="showPaymentModal" 
+                :folioId="folio.id"
+                :balanceDue="folio.balance"
+                @submit="handleApplyPayment" 
+            />
         </div>
-
-        <ChargeModal 
-            v-model:open="showChargeModal" 
-            :folioId="folio.id"
-            @submit="handlePostCharge" 
-        />
-        
-        <PaymentModal 
-            v-model:open="showPaymentModal" 
-            :folioId="folio.id"
-            :balanceDue="folio.balance"
-            @submit="handleApplyPayment" 
-        />
-    </div>
-    <div v-else class="flex flex-col items-center justify-center py-20">
-        <UIcon name="i-lucide-file-question" class="size-16 text-neutral-300 mb-4" />
-        <h2 class="text-xl font-bold">Folio Not Found</h2>
-        <p class="text-muted mt-2 mb-6">The requested folio could not be found or has been deleted.</p>
-        <UButton label="Return to Billing" color="primary" @click="router.push('/billing')" />
-    </div>
+        <div v-else class="flex flex-col items-center justify-center py-20">
+            <UIcon name="i-lucide-file-question" class="size-16 text-neutral-300 mb-4" />
+            <h2 class="text-xl font-bold">Folio Not Found</h2>
+            <p class="text-muted mt-2 mb-6">The requested folio could not be found or has been deleted.</p>
+            <UButton label="Return to Billing" color="primary" @click="router.push('/billing')" />
+        </div>
+    </template>
 </template>

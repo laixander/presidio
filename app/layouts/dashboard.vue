@@ -28,24 +28,57 @@ const open = ref(true)
 const route = useRoute()
 const router = useRouter()
 const events = useEvents()
-// const { logout } = useDemoAuth()
+const authStore = useDemoAuth()
 
 // Sidebar navigation items mapping
-const items = computed<NavigationMenuItem[]>(() => [
-    { label: 'Admin Dashboard', icon: 'i-lucide-layout-dashboard', to: '/admin' },
-    { label: 'Rooms', icon: 'i-lucide-bed-double', to: '/admin/rooms' },
-    { label: 'Front Desk', icon: 'i-lucide-concierge-bell', to: '/frontdesk' },
-    { label: 'Guests', icon: 'i-lucide-users', to: '/frontdesk/guests' },
-    { label: 'Reservations', icon: 'i-lucide-calendar-check', to: '/frontdesk/bookings' },
-    { label: 'Folios', icon: 'i-lucide-receipt', to: '/billing' },
-    { label: 'Housekeeping', icon: 'i-lucide-spray-can', to: '/housekeeping' },
-    { label: 'Engine Control', icon: 'i-lucide-cpu', to: '/admin/simulation' }
-])
+const allItems: NavigationMenuItem[][] = [
+    [
+        { type: 'label', label: 'Admin' },
+        { label: 'Admin Dashboard', icon: 'i-lucide-layout-dashboard', to: '/admin' },
+        { label: 'Rooms', icon: 'i-lucide-bed-double', to: '/admin/rooms' },
+        { label: 'Users', icon: 'i-lucide-users-round', to: '/admin/users' },
+        { label: 'Settings', icon: 'i-lucide-settings', to: '/admin/settings' },
+        { label: 'Reports', icon: 'i-lucide-pie-chart', to: '/admin/reports' },
+        { label: 'Engine Control', icon: 'i-lucide-cpu', to: '/admin/simulation' }
+    ],
+    [
+        { type: 'label', label: 'Front Desk' },
+        { label: 'Front Desk', icon: 'i-lucide-concierge-bell', to: '/frontdesk' },
+        { label: 'Guests', icon: 'i-lucide-users', to: '/frontdesk/guests' },
+        { label: 'Reservations', icon: 'i-lucide-calendar-check', to: '/frontdesk/bookings' }
+    ],
+    [
+        { type: 'label', label: 'Billing' },
+        { label: 'Folios', icon: 'i-lucide-receipt', to: '/billing' },
+        { label: 'Invoices', icon: 'i-lucide-file-text', to: '/billing/invoices' }
+    ],
+    [
+        { type: 'label', label: 'Housekeeping' },
+        { label: 'Housekeeping', icon: 'i-lucide-spray-can', to: '/housekeeping' }
+    ]
+]
 
-// const handleLogout = () => {
-//     logout()
-//     router.push('/')
-// }
+const isPageAuthorized = (role: string | null, path: string) => {
+    if (role === 'Administrator') return true
+    if (role === 'Front Desk' && path.startsWith('/frontdesk')) return true
+    if (role === 'Billing' && path.startsWith('/billing')) return true
+    if (role === 'Housekeeping' && path.startsWith('/housekeeping')) return true
+    return false
+}
+
+const items = computed<NavigationMenuItem[][]>(() => {
+    if (authStore.showAllPages.value) {
+        return allItems
+    }
+    
+    // Filter groups and items based on role authorization
+    return allItems
+        .map(group => group.filter(item => {
+            if (item.type === 'label') return true // Keep label temporarily
+            return isPageAuthorized(authStore.currentRole.value, item.to as string)
+        }))
+        .filter(group => group.length > 1) // Only keep groups that have at least one valid route (length > 1)
+})
 
 // ============================================================================
 // Computed Properties

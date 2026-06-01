@@ -18,6 +18,9 @@ import { Doughnut, Bar } from 'vue-chartjs'
 const { palette, legendLabels, doughnutOptions, defaultOptions, doughnutDataset, barDataset } = useChart()
 
 const roomsStore = useRoomsStore()
+const authStore = useDemoAuth()
+
+const isAuthorized = computed(() => authStore.currentRole.value === 'Administrator')
 const reservationsStore = useReservationsStore()
 const foliosStore = useFoliosStore()
 const guestsStore = useGuestsStore()
@@ -86,6 +89,9 @@ const hkSummary = computed(() => housekeepingStore.statusCounts)
 </script>
 
 <template>
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be an Administrator to access the Admin Dashboard." icon="i-lucide-lock" />
+
+    <template v-else>
     <UPageCard title="Dashboard" description="Hotel operations overview and key performance indicators."
         variant="naked" orientation="horizontal" class="rounded-none" />
 
@@ -185,4 +191,5 @@ const hkSummary = computed(() => housekeepingStore.statusCounts)
             </div>
         </UCard>
     </div>
+    </template>
 </template>

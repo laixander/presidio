@@ -16,6 +16,7 @@ export const useDemoSeeder = () => {
     const { setUsers, clear: clearUsers } = useUsers()
 
     // Presidio Pinia stores
+    const usersStore = useUsersStore()
     const roomsStore = useRoomsStore()
     const guestsStore = useGuestsStore()
     const reservationsStore = useReservationsStore()
@@ -35,6 +36,7 @@ export const useDemoSeeder = () => {
         }
 
         // Presidio stores: seed from local mock data
+        usersStore.seed(mockStaffUsers)
         roomsStore.seed(mockRooms, mockRoomTypes)
         guestsStore.seed(mockGuests)
         reservationsStore.seed(mockReservations)
@@ -47,6 +49,7 @@ export const useDemoSeeder = () => {
      */
     const resetAll = async () => {
         clearUsers(true)
+        usersStore.clear()
         roomsStore.clear()
         guestsStore.clear()
         reservationsStore.clear()

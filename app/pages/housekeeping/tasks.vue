@@ -164,67 +164,74 @@ const columns: TableColumn<HousekeepingTask>[] = [
         }
     }
 ]
+
+const authStore = useDemoAuth()
+const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(authStore.currentRole.value ?? ''))
 </script>
 
 <template>
-    <div class="flex-1 flex flex-col h-full">
-        <!-- Dashboard Header & KPIs -->
-        <div class="p-4 sm:p-6 border-b border-default bg-neutral-50 dark:bg-neutral-900 shrink-0">
-            <h1 class="text-2xl font-bold mb-6">Task Queue</h1>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatCard 
-                    title="Pending Tasks" 
-                    :value="housekeepingStore.statusCounts.pending" 
-                    icon="i-lucide-clock" 
-                    trend="Awaiting assignment/start"
-                    trend-direction="flat"
-                    color="warning"
-                />
-                <StatCard 
-                    title="In Progress" 
-                    :value="housekeepingStore.statusCounts.inProgress" 
-                    icon="i-lucide-play-circle" 
-                    trend="Currently being worked on"
-                    trend-direction="flat"
-                    color="primary"
-                />
-                <StatCard 
-                    title="Completed Today" 
-                    :value="housekeepingStore.statusCounts.completed" 
-                    icon="i-lucide-check-circle-2" 
-                    trend="Great job!"
-                    trend-direction="up"
-                    color="success"
-                />
-            </div>
-        </div>
-        
-        <!-- Table Toolbar -->
-        <div class="p-4 sm:px-6 flex justify-between items-center border-b border-default shrink-0">
-            <div class="font-semibold text-lg flex items-center gap-2">
-                <UIcon name="i-lucide-clipboard-list" class="text-primary" />
-                All Tasks
-            </div>
-        </div>
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Housekeeping staff or an Administrator to access the Task queue." icon="i-lucide-lock" />
 
-        <!-- Data Table -->
-        <UTable 
-            sticky 
-            :data="housekeepingStore.tasks" 
-            :columns="columns"
-            :loading="housekeepingStore.isLoading" 
-            :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
-            class="flex-1 overflow-y-auto scrollbar"
-        >
-            <template #empty>
-                <Empty 
-                    :loading="housekeepingStore.isLoading" 
-                    title="No tasks found"
-                    description="There are currently no housekeeping tasks in the queue."
-                    icon="i-lucide-clipboard-check" 
-                />
-            </template>
-        </UTable>
-    </div>
+    <template v-else>
+        <div class="flex-1 flex flex-col h-full">
+            <!-- Dashboard Header & KPIs -->
+            <div class="p-4 sm:p-6 border-b border-default bg-neutral-50 dark:bg-neutral-900 shrink-0">
+                <h1 class="text-2xl font-bold mb-6">Task Queue</h1>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard 
+                        title="Pending Tasks" 
+                        :value="housekeepingStore.statusCounts.pending" 
+                        icon="i-lucide-clock" 
+                        trend="Awaiting assignment/start"
+                        trend-direction="flat"
+                        color="warning"
+                    />
+                    <StatCard 
+                        title="In Progress" 
+                        :value="housekeepingStore.statusCounts.inProgress" 
+                        icon="i-lucide-play-circle" 
+                        trend="Currently being worked on"
+                        trend-direction="flat"
+                        color="primary"
+                    />
+                    <StatCard 
+                        title="Completed Today" 
+                        :value="housekeepingStore.statusCounts.completed" 
+                        icon="i-lucide-check-circle-2" 
+                        trend="Great job!"
+                        trend-direction="up"
+                        color="success"
+                    />
+                </div>
+            </div>
+            
+            <!-- Table Toolbar -->
+            <div class="p-4 sm:px-6 flex justify-between items-center border-b border-default shrink-0">
+                <div class="font-semibold text-lg flex items-center gap-2">
+                    <UIcon name="i-lucide-clipboard-list" class="text-primary" />
+                    All Tasks
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <UTable 
+                sticky 
+                :data="housekeepingStore.tasks" 
+                :columns="columns"
+                :loading="housekeepingStore.isLoading" 
+                :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
+                class="flex-1 overflow-y-auto scrollbar"
+            >
+                <template #empty>
+                    <Empty 
+                        :loading="housekeepingStore.isLoading" 
+                        title="No tasks found"
+                        description="There are currently no housekeeping tasks in the queue."
+                        icon="i-lucide-clipboard-check" 
+                    />
+                </template>
+            </UTable>
+        </div>
+    </template>
 </template>

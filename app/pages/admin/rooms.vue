@@ -242,9 +242,15 @@ const columnVisibility = ref({
     id: false
 })
 const viewMode = ref<'list' | 'card'>('list')
+const authStore = useDemoAuth()
+
+const isAuthorized = computed(() => authStore.currentRole.value === 'Administrator')
 </script>
 
 <template>
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be an Administrator to access Room Management." icon="i-lucide-lock" />
+
+    <template v-else>
     <UPageCard title="Room Management"
         description="Manage hotel room inventory, status, and pricing."
         variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
@@ -340,4 +346,5 @@ const viewMode = ref<'list' | 'card'>('list')
     <!-- Logs Drawer                                                       -->
     <!-- ================================================================ -->
     <LogsDrawer v-model:open="isDrawerOpen" namespace="rooms" />
+    </template>
 </template>

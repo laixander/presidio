@@ -11,6 +11,7 @@ import type { Guest } from '~/types'
 import GuestAvatar from '~/components/GuestAvatar.vue'
 import GuestModal from '~/components/GuestModal.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
+import { useRouter } from 'vue-router'
 
 // ============================================================================
 // Page Configuration
@@ -32,6 +33,7 @@ const events = useEvents()
 const overlay = useOverlay()
 const logger  = useLogger('guests')
 const toast   = useAppToast()
+const router  = useRouter()
 
 const guestModal   = overlay.create(GuestModal)
 const confirmModal = overlay.create(ConfirmationModal)
@@ -105,11 +107,14 @@ const columns: TableColumn<Guest>[] = [
         header: getSortableHeader('Name'),
         accessorFn: (row) => guestsStore.getFullName(row),
         cell: ({ row }) => {
-            return h(GuestAvatar, {
+            return h(resolveComponent('ULink'), {
+                to: `/frontdesk/guests/${row.original.id}`,
+                class: 'block hover:opacity-80 transition-opacity'
+            }, () => h(GuestAvatar, {
                 guest: row.original,
                 showDetails: true,
                 size: 'sm'
-            })
+            }))
         }
     },
     {
@@ -147,6 +152,11 @@ const columns: TableColumn<Guest>[] = [
             const items: DropdownMenuItem[][] = [
                 [
                     {
+                        label: 'View Profile',
+                        icon: 'i-lucide-user',
+                        onSelect: () => router.push(`/frontdesk/guests/${row.original.id}`)
+                    },
+                    {
                         label: 'Edit Profile',
                         icon: 'i-lucide-edit',
                         onSelect: () => handleEditGuest(row.original)
@@ -183,33 +193,39 @@ const globalFilter = ref('')
 const columnVisibility = ref({
     id: false
 })
+const authStore = useDemoAuth()
+const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value ?? ''))
 </script>
 
 <template>
-    <UPageCard title="Guest Directory"
-        description="Manage guest profiles, history, and VIP statuses."
-        variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
-        <div class="flex justify-end gap-2 flex-1">
-            <TableGlobalFilter v-model="globalFilter" placeholder="Search guests..." />
-            <TableColumnToggle :table="table" />
-        </div>
-    </UPageCard>
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Front Desk staff or an Administrator to access the Guest Directory." icon="i-lucide-lock" />
 
-    <UTable sticky ref="table" :data="guestsStore.guests" :columns="columns"
-        :loading="guestsStore.isLoading" v-model:column-visibility="columnVisibility"
-        v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
-        <template #empty>
-            <Empty :loading="guestsStore.isLoading" title="No guests found"
-                description="Your guest directory is empty. Click 'Add Guest' to create a new profile."
-                icon="i-lucide-users" loading-title="Loading Guests"
-                loading-description="Please wait while we fetch the guest directory.">
-                <template #action>
-                    <UButton label="Add First Guest" icon="i-lucide-plus" color="primary" size="lg"
-                        @click="events.emit('addGuest')" />
-                </template>
-            </Empty>
-        </template>
-    </UTable>
+    <template v-else>
+        <UPageCard title="Guest Directory"
+            description="Manage guest profiles, history, and VIP statuses."
+            variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
+            <div class="flex justify-end gap-2 flex-1">
+                <TableGlobalFilter v-model="globalFilter" placeholder="Search guests..." />
+                <TableColumnToggle :table="table" />
+            </div>
+        </UPageCard>
 
-    <GuestModal v-model:open="isAddGuestOpen" @submit="handleAddGuest" />
+        <UTable sticky ref="table" :data="guestsStore.guests" :columns="columns"
+            :loading="guestsStore.isLoading" v-model:column-visibility="columnVisibility"
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            <template #empty>
+                <Empty :loading="guestsStore.isLoading" title="No guests found"
+                    description="Your guest directory is empty. Click 'Add Guest' to create a new profile."
+                    icon="i-lucide-users" loading-title="Loading Guests"
+                    loading-description="Please wait while we fetch the guest directory.">
+                    <template #action>
+                        <UButton label="Add First Guest" icon="i-lucide-plus" color="primary" size="lg"
+                            @click="events.emit('addGuest')" />
+                    </template>
+                </Empty>
+            </template>
+        </UTable>
+
+        <GuestModal v-model:open="isAddGuestOpen" @submit="handleAddGuest" />
+    </template>
 </template>

@@ -5,6 +5,7 @@
 
 export default defineNuxtPlugin(() => {
     // Hydrate data stores from localStorage
+    useUsersStore().hydrate()
     useRoomsStore().hydrate()
     useGuestsStore().hydrate()
     useReservationsStore().hydrate()

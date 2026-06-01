@@ -119,77 +119,84 @@ const departureColumns: TableColumn<typeof departuresList.value[0]>[] = [
         }
     }
 ]
+
+const authStore = useDemoAuth()
+const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value ?? ''))
 </script>
 
 <template>
-    <UPageCard title="Front Desk Overview" description="Manage today's arrivals, departures, and in-house guests."
-        variant="naked" orientation="horizontal" class="rounded-none" />
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Front Desk staff or an Administrator to access this module." icon="i-lucide-lock" />
 
-    <!-- ── KPI Stat Cards ──────────────────────────────────────────────── -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">
-        <StatCard title="In-House Guests" :value="reservationsStore.inHouseGuests.length" icon="i-lucide-users"
-            :trend="`${reservationsStore.totalBookings} total bookings`"
-            trend-direction="flat" />
-        <StatCard title="Arrivals Today" :value="arrivalsList.length" icon="i-lucide-log-in"
-            :trend="`${arrivalsList.filter(a => a.status === 'In-House').length} checked in`"
-            trend-direction="flat" />
-        <StatCard title="Departures Today" :value="departuresList.length" icon="i-lucide-log-out"
-            :trend="`${departuresList.filter(d => d.status === 'Done').length} checked out`"
-            trend-direction="flat" />
-        <StatCard title="Vacant Rooms" :value="roomsStore.availableRooms.length" icon="i-lucide-door-open"
-            :trend="`Out of ${roomsStore.rooms.length} total`"
-            trend-direction="flat" />
-    </div>
+    <template v-else>
+        <UPageCard title="Front Desk Overview" description="Manage today's arrivals, departures, and in-house guests."
+            variant="naked" orientation="horizontal" class="rounded-none" />
 
-    <!-- ── Arrivals & Departures Tables ────────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
-        
-        <!-- Today's Arrivals -->
-        <UCard variant="subtle" class="shadow-sm" :ui="{ body: 'p-0 sm:p-0' }">
-            <template #header>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <UIcon name="i-lucide-log-in" class="size-5 text-primary" />
-                        <h3 class="text-base font-semibold">Today's Arrivals</h3>
-                    </div>
-                    <UBadge variant="soft" :color="arrivalsList.length > 0 ? 'primary' : 'neutral'">
-                        {{ arrivalsList.length }}
-                    </UBadge>
-                </div>
-            </template>
+        <!-- ── KPI Stat Cards ──────────────────────────────────────────────── -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">
+            <StatCard title="In-House Guests" :value="reservationsStore.inHouseGuests.length" icon="i-lucide-users"
+                :trend="`${reservationsStore.totalBookings} total bookings`"
+                trend-direction="flat" />
+            <StatCard title="Arrivals Today" :value="arrivalsList.length" icon="i-lucide-log-in"
+                :trend="`${arrivalsList.filter(a => a.status === 'In-House').length} checked in`"
+                trend-direction="flat" />
+            <StatCard title="Departures Today" :value="departuresList.length" icon="i-lucide-log-out"
+                :trend="`${departuresList.filter(d => d.status === 'Done').length} checked out`"
+                trend-direction="flat" />
+            <StatCard title="Vacant Rooms" :value="roomsStore.availableRooms.length" icon="i-lucide-door-open"
+                :trend="`Out of ${roomsStore.rooms.length} total`"
+                trend-direction="flat" />
+        </div>
+
+        <!-- ── Arrivals & Departures Tables ────────────────────────────────── -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
             
-            <UTable :data="arrivalsList" :columns="arrivalColumns" class="scrollbar">
-                <template #empty>
-                    <div class="text-sm text-muted py-8 text-center flex flex-col items-center gap-2">
-                        <UIcon name="i-lucide-check-circle-2" class="size-8 text-neutral-300" />
-                        No arrivals scheduled for today.
+            <!-- Today's Arrivals -->
+            <UCard variant="subtle" class="shadow-sm" :ui="{ body: 'p-0 sm:p-0' }">
+                <template #header>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <UIcon name="i-lucide-log-in" class="size-5 text-primary" />
+                            <h3 class="text-base font-semibold">Today's Arrivals</h3>
+                        </div>
+                        <UBadge variant="soft" :color="arrivalsList.length > 0 ? 'primary' : 'neutral'">
+                            {{ arrivalsList.length }}
+                        </UBadge>
                     </div>
                 </template>
-            </UTable>
-        </UCard>
+                
+                <UTable :data="arrivalsList" :columns="arrivalColumns" class="scrollbar">
+                    <template #empty>
+                        <div class="text-sm text-muted py-8 text-center flex flex-col items-center gap-2">
+                            <UIcon name="i-lucide-check-circle-2" class="size-8 text-neutral-300" />
+                            No arrivals scheduled for today.
+                        </div>
+                    </template>
+                </UTable>
+            </UCard>
 
-        <!-- Today's Departures -->
-        <UCard variant="subtle" class="shadow-sm" :ui="{ body: 'p-0 sm:p-0' }">
-            <template #header>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <UIcon name="i-lucide-log-out" class="size-5 text-primary" />
-                        <h3 class="text-base font-semibold">Today's Departures</h3>
-                    </div>
-                    <UBadge variant="soft" :color="departuresList.length > 0 ? 'warning' : 'neutral'">
-                        {{ departuresList.length }}
-                    </UBadge>
-                </div>
-            </template>
-
-            <UTable :data="departuresList" :columns="departureColumns" class="scrollbar">
-                <template #empty>
-                    <div class="text-sm text-muted py-8 text-center flex flex-col items-center gap-2">
-                        <UIcon name="i-lucide-check-circle-2" class="size-8 text-neutral-300" />
-                        No departures scheduled for today.
+            <!-- Today's Departures -->
+            <UCard variant="subtle" class="shadow-sm" :ui="{ body: 'p-0 sm:p-0' }">
+                <template #header>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <UIcon name="i-lucide-log-out" class="size-5 text-primary" />
+                            <h3 class="text-base font-semibold">Today's Departures</h3>
+                        </div>
+                        <UBadge variant="soft" :color="departuresList.length > 0 ? 'warning' : 'neutral'">
+                            {{ departuresList.length }}
+                        </UBadge>
                     </div>
                 </template>
-            </UTable>
-        </UCard>
-    </div>
+
+                <UTable :data="departuresList" :columns="departureColumns" class="scrollbar">
+                    <template #empty>
+                        <div class="text-sm text-muted py-8 text-center flex flex-col items-center gap-2">
+                            <UIcon name="i-lucide-check-circle-2" class="size-8 text-neutral-300" />
+                            No departures scheduled for today.
+                        </div>
+                    </template>
+                </UTable>
+            </UCard>
+        </div>
+    </template>
 </template>

@@ -98,70 +98,76 @@ const columns: TableColumn<Folio>[] = [
 const table = useTemplateRef('table')
 const globalFilter = ref('')
 const columnVisibility = ref({})
+const authStore = useDemoAuth()
+const isAuthorized = computed(() => ['Administrator', 'Billing'].includes(authStore.currentRole.value ?? ''))
 </script>
 
 <template>
-    <!-- Dashboard Header -->
-    <UPageCard title="Folios & Billing" description="Billing dashboard and folio management."
-    variant="naked" orientation="horizontal" class="rounded-none p-4 sm:p-6" />
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Billing staff or an Administrator to access the Billing module." icon="i-lucide-lock" />
 
-    <!-- KPIs -->
-    <div class="px-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard 
-            title="Open Folios" 
-            :value="foliosStore.openFolios.length" 
-            icon="i-lucide-folder-open" 
-            trend="Requires settlement"
-            trend-direction="flat"
-        />
-        <StatCard 
-            title="Total Revenue" 
-            :value="formatCurrency(foliosStore.totalRevenue)" 
-            icon="i-lucide-trending-up" 
-            trend="All charges posted"
-            trend-direction="up"
-        />
-        <StatCard 
-            title="Total Collected" 
-            :value="formatCurrency(foliosStore.totalPayments)" 
-            icon="i-lucide-wallet" 
-            trend="Payments received"
-            trend-direction="up"
-        />
-    </div>
-    <USeparator class="mt-6" />
+    <template v-else>
+        <!-- Dashboard Header -->
+        <UPageCard title="Folios & Billing" description="Billing dashboard and folio management."
+        variant="naked" orientation="horizontal" class="rounded-none p-4 sm:p-6" />
 
-    <!-- Table Toolbar -->
-    <div class="p-4 sm:px-6 flex justify-between items-center border-b border-default shrink-0">
-        <div class="font-semibold text-lg flex items-center gap-2">
-            <UIcon name="i-lucide-file-text" class="text-primary" />
-            All Folios
-        </div>
-        <div class="flex gap-2">
-            <TableGlobalFilter v-model="globalFilter" placeholder="Search folios..." />
-            <TableColumnToggle :table="table" />
-        </div>
-    </div>
-
-    <!-- Data Table -->
-    <UTable 
-        sticky 
-        ref="table" 
-        :data="foliosStore.folios" 
-        :columns="columns"
-        :loading="foliosStore.isLoading" 
-        v-model:column-visibility="columnVisibility"
-        v-model:global-filter="globalFilter" 
-        :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
-        class="flex-1 overflow-y-auto scrollbar"
-    >
-        <template #empty>
-            <Empty 
-                :loading="foliosStore.isLoading" 
-                title="No folios found"
-                description="There are no billing folios in the system."
-                icon="i-lucide-receipt" 
+        <!-- KPIs -->
+        <div class="px-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <StatCard 
+                title="Open Folios" 
+                :value="foliosStore.openFolios.length" 
+                icon="i-lucide-folder-open" 
+                trend="Requires settlement"
+                trend-direction="flat"
             />
-        </template>
-    </UTable>
+            <StatCard 
+                title="Total Revenue" 
+                :value="formatCurrency(foliosStore.totalRevenue)" 
+                icon="i-lucide-trending-up" 
+                trend="All charges posted"
+                trend-direction="up"
+            />
+            <StatCard 
+                title="Total Collected" 
+                :value="formatCurrency(foliosStore.totalPayments)" 
+                icon="i-lucide-wallet" 
+                trend="Payments received"
+                trend-direction="up"
+            />
+        </div>
+        <USeparator class="mt-6" />
+
+        <!-- Table Toolbar -->
+        <div class="p-4 sm:px-6 flex justify-between items-center border-b border-default shrink-0">
+            <div class="font-semibold text-lg flex items-center gap-2">
+                <UIcon name="i-lucide-file-text" class="text-primary" />
+                All Folios
+            </div>
+            <div class="flex gap-2">
+                <TableGlobalFilter v-model="globalFilter" placeholder="Search folios..." />
+                <TableColumnToggle :table="table" />
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <UTable 
+            sticky 
+            ref="table" 
+            :data="foliosStore.folios" 
+            :columns="columns"
+            :loading="foliosStore.isLoading" 
+            v-model:column-visibility="columnVisibility"
+            v-model:global-filter="globalFilter" 
+            :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
+            class="flex-1 overflow-y-auto scrollbar"
+        >
+            <template #empty>
+                <Empty 
+                    :loading="foliosStore.isLoading" 
+                    title="No folios found"
+                    description="There are no billing folios in the system."
+                    icon="i-lucide-receipt" 
+                />
+            </template>
+        </UTable>
+    </template>
 </template>

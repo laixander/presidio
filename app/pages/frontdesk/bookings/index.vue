@@ -134,31 +134,37 @@ const columns: TableColumn<Reservation>[] = [
 const table = useTemplateRef('table')
 const globalFilter = ref('')
 const columnVisibility = ref({})
+const authStore = useDemoAuth()
+const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value ?? ''))
 </script>
 
 <template>
-    <UPageCard title="Reservations"
-        description="Manage all guest bookings, arrivals, and departures."
-        variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
-        <div class="flex justify-end gap-2 flex-1">
-            <TableGlobalFilter v-model="globalFilter" placeholder="Search bookings..." />
-            <TableColumnToggle :table="table" />
-        </div>
-    </UPageCard>
+    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Front Desk staff or an Administrator to access Reservations." icon="i-lucide-lock" />
 
-    <UTable sticky ref="table" :data="reservationsStore.reservations" :columns="columns"
-        :loading="reservationsStore.isLoading" v-model:column-visibility="columnVisibility"
-        v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
-        <template #empty>
-            <Empty :loading="reservationsStore.isLoading" title="No reservations found"
-                description="Your reservations directory is empty."
-                icon="i-lucide-calendar" loading-title="Loading Reservations"
-                loading-description="Please wait while we fetch the reservations.">
-                <template #action>
-                    <UButton label="Create Reservation" icon="i-lucide-plus" color="primary" size="lg"
-                        @click="router.push('/frontdesk/bookings/new')" />
-                </template>
-            </Empty>
-        </template>
-    </UTable>
+    <template v-else>
+        <UPageCard title="Reservations"
+            description="Manage all guest bookings, arrivals, and departures."
+            variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
+            <div class="flex justify-end gap-2 flex-1">
+                <TableGlobalFilter v-model="globalFilter" placeholder="Search bookings..." />
+                <TableColumnToggle :table="table" />
+            </div>
+        </UPageCard>
+
+        <UTable sticky ref="table" :data="reservationsStore.reservations" :columns="columns"
+            :loading="reservationsStore.isLoading" v-model:column-visibility="columnVisibility"
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            <template #empty>
+                <Empty :loading="reservationsStore.isLoading" title="No reservations found"
+                    description="Your reservations directory is empty."
+                    icon="i-lucide-calendar" loading-title="Loading Reservations"
+                    loading-description="Please wait while we fetch the reservations.">
+                    <template #action>
+                        <UButton label="Create Reservation" icon="i-lucide-plus" color="primary" size="lg"
+                            @click="router.push('/frontdesk/bookings/new')" />
+                    </template>
+                </Empty>
+            </template>
+        </UTable>
+    </template>
 </template>
