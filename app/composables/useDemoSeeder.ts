@@ -27,6 +27,9 @@ export const useDemoSeeder = () => {
      * Seed all stores with mock data.
      */
     const seedAll = async () => {
+        const { seederCount } = useDevSettings()
+        const count = seederCount.value
+
         // Legacy: seed agent table users from API
         try {
             const data = await $fetch('/api/users')
@@ -36,12 +39,12 @@ export const useDemoSeeder = () => {
         }
 
         // Presidio stores: seed from local mock data
-        usersStore.seed(mockStaffUsers)
-        roomsStore.seed(mockRooms, mockRoomTypes)
-        guestsStore.seed(mockGuests)
-        reservationsStore.seed(mockReservations)
-        foliosStore.seed(mockFolios, mockCharges, mockPayments)
-        housekeepingStore.seed(mockTasks)
+        usersStore.seed(mockStaffUsers.slice(0, count))
+        roomsStore.seed(mockRooms.slice(0, count), mockRoomTypes)
+        guestsStore.seed(mockGuests.slice(0, count))
+        reservationsStore.seed(mockReservations.slice(0, count))
+        foliosStore.seed(mockFolios.slice(0, count), mockCharges, mockPayments)
+        housekeepingStore.seed(mockTasks.slice(0, count))
     }
 
     /**

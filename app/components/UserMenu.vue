@@ -66,6 +66,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
                 onSelect: (e: Event) => {
                     e.preventDefault()
                     appConfig.ui.colors.primary = color
+                    useDevSettings().primaryColor.value = color
                 }
             }))
         }, {
@@ -82,6 +83,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
                 onSelect: (e: Event) => {
                     e.preventDefault()
                     appConfig.ui.colors.neutral = color
+                    useDevSettings().neutralColor.value = color
                 }
             }))
         }]

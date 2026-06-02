@@ -121,16 +121,13 @@ const headerActions = computed(() => {
         variant === 'inset' && 'bg-neutral-50 dark:bg-neutral-950',
         side === 'right' && 'flex-row-reverse'
     ]">
-        <USidebar v-model:open="open" :variant="variant" :collapsible="collapsible" :side="side" :ui="{
-            root: '[--sidebar-width-icon:4.5625rem]', container: 'h-full', header: 'px-5'
-        }">
-            <template #header>
+        <USidebar v-model:open="open" :variant="variant" :collapsible="collapsible" :side="side" :ui="{ root: '[--sidebar-width-icon:4.5625rem]', container: 'h-full', header: 'px-5' }" close>
+            <template #header="{ close }">
                 <div class="flex items-end gap-2.5">
                     <UIcon name="i-lucide-hotel" class="size-8 shrink-0 text-primary" />
-                    <span v-if="!isCollapsed"
-                        class="font-black text-neutral-900 dark:text-white tracking-tight">Presi<span
-                            class="text-primary">dio</span></span>
+                    <span v-if="!isCollapsed" class="font-black text-neutral-900 dark:text-white tracking-tight">Presi<span class="text-primary">dio</span></span>
                 </div>
+                <UButton class="lg:hidden ml-auto" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Close sidebar" @click="close()"/>
             </template>
 
             <UNavigationMenu :items="items" orientation="vertical" :collapsed="isCollapsed" :tooltip="{
