@@ -18,10 +18,10 @@ definePageMeta({
     title: 'Room Management',
     layout: 'dashboard',
     isTable: true,
-    headerActions: [
-        { label: 'History', icon: 'i-lucide-history', event: 'viewRoomLogs', variant: 'soft' },
-        { label: 'Add Room', icon: 'i-lucide-plus', event: 'addRoom', color: 'primary' }
-    ]
+    // headerActions: [
+    //     { label: 'History', icon: 'i-lucide-history', event: 'viewRoomLogs', variant: 'soft' },
+    //     { label: 'Add Room', icon: 'i-lucide-plus', event: 'addRoom', color: 'primary' }
+    // ]
 })
 
 // ============================================================================
@@ -264,13 +264,20 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         </div>
     </UPageCard>
 
+    <ClientOnly>
+        <Teleport to="#header-actions-teleport">
+            <UButton icon="i-lucide-history" color="neutral" variant="ghost" @click="events.emit('viewRoomLogs')">Recent Activity</UButton>
+            <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addRoom')">Add Room</UButton>
+        </Teleport>
+    </ClientOnly>
+
     <!-- List (table) view -->
     <UTable v-if="viewMode === 'list'" sticky ref="table" :data="roomsStore.rooms" :columns="columns"
         :loading="roomsStore.isLoading" v-model:column-visibility="columnVisibility"
         v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
         <template #empty>
             <Empty :loading="roomsStore.isLoading" title="No rooms found"
-                description="Your room inventory is empty. Click 'Deploy Demo Data' to populate or add rooms manually."
+                description="There are currently no rooms to display. Add a new room to get started."
                 icon="i-lucide-bed-double" loading-title="Loading Rooms"
                 loading-description="Please wait while we fetch your room inventory.">
                 <template #action>
@@ -285,7 +292,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
     <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
         <Empty v-if="!roomsStore.isLoading && !roomsStore.rooms.length"
             title="No rooms found"
-            description="Your room inventory is empty. Click 'Deploy Demo Data' to populate or add rooms manually."
+            description="There are currently no rooms to display. Add a new room to get started."
             icon="i-lucide-bed-double">
             <template #action>
                 <UButton label="Add First Room" icon="i-lucide-plus" color="primary" size="lg"
@@ -314,22 +321,22 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
                     </div>
                 </template>
 
-                <div class="*:py-2 text-sm divide-y divide-default">
-                    <div class="flex items-center justify-between">
+                <div class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
+                    <div>
                         <span class="text-muted">Rate / Night</span>
                         <span :class="room.rateOverride !== null ? 'text-primary font-semibold' : ''">
                             ₱{{ roomsStore.getEffectiveRate(room).toLocaleString() }}{{ room.rateOverride !== null ? ' ★' : '' }}
                         </span>
                     </div>
-                    <div class="flex items-center justify-between">
+                    <div>
                         <span class="text-muted">Occupancy</span>
                         <UBadge :label="room.occupancyStatus" :color="getOccupancyColor(room.occupancyStatus)" variant="subtle" size="sm" />
                     </div>
-                    <div class="flex items-center justify-between">
+                    <div>
                         <span class="text-muted">Clean Status</span>
                         <UBadge :label="room.cleanStatus" :color="getCleanColor(room.cleanStatus)" variant="subtle" size="sm" />
                     </div>
-                    <div class="flex items-center justify-between">
+                    <div>
                         <span class="text-muted">Condition</span>
                         <UBadge v-if="room.condition !== 'Normal'" :label="room.condition"
                             :color="getConditionColor(room.condition)" variant="subtle" size="sm" />

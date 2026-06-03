@@ -156,7 +156,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
             v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
             <template #empty>
                 <Empty :loading="reservationsStore.isLoading" title="No reservations found"
-                    description="Your reservations directory is empty."
+                    description="There are currently no reservations to display. Create a new reservation to get started."
                     icon="i-lucide-calendar" loading-title="Loading Reservations"
                     loading-description="Please wait while we fetch the reservations.">
                     <template #action>

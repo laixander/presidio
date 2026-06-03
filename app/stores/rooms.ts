@@ -97,6 +97,32 @@ export const useRoomsStore = defineStore('rooms', () => {
         persist()
     }
 
+    const addRoomType = (data: Omit<RoomType, 'id'>): RoomType => {
+        const newId = roomTypes.value.length > 0 ? Math.max(...roomTypes.value.map(rt => rt.id)) + 1 : 1
+        const roomType: RoomType = { id: newId, ...data }
+        roomTypes.value.push(roomType)
+        persist()
+        return roomType
+    }
+
+    const updateRoomType = (id: number, data: Partial<Omit<RoomType, 'id'>>) => {
+        const roomType = roomTypes.value.find(rt => rt.id === id)
+        if (roomType) {
+            Object.assign(roomType, data)
+            persist()
+        }
+    }
+
+    const deleteRoomType = (id: number): { success: boolean, message?: string } => {
+        const isUsed = rooms.value.some(r => r.roomTypeId === id)
+        if (isUsed) {
+            return { success: false, message: 'Cannot delete room type because it is currently assigned to one or more rooms.' }
+        }
+        roomTypes.value = roomTypes.value.filter(rt => rt.id !== id)
+        persist()
+        return { success: true }
+    }
+
     /**
      * Bulk-set rooms and room types (used by seeder).
      */
@@ -121,6 +147,6 @@ export const useRoomsStore = defineStore('rooms', () => {
         // Getters
         availableRooms, occupancyRate, roomsByStatus, getRoomType, getEffectiveRate,
         // Actions
-        hydrate, addRoom, updateRoom, deleteRoom, seed, clear
+        hydrate, addRoom, updateRoom, deleteRoom, addRoomType, updateRoomType, deleteRoomType, seed, clear
     }
 })

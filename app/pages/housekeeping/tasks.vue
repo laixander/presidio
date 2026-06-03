@@ -10,7 +10,7 @@ import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import { UButton, UDropdownMenu, UBadge } from '#components'
 
 import type { HousekeepingTask, TaskStatus, TaskType } from '~/types'
-import { mockStaffUsers } from '~/data/mock/users'
+
 
 definePageMeta({
     title: 'Housekeeping Tasks',
@@ -108,7 +108,8 @@ const columns: TableColumn<HousekeepingTask>[] = [
         header: 'Assigned To',
         cell: ({ row }) => {
             if (!row.original.assignedTo) return h('span', { class: 'text-muted italic text-sm' }, 'Unassigned')
-            const user = mockStaffUsers.find(u => u.id === row.original.assignedTo)
+            const userStore = useUsersStore()
+            const user = userStore.users.find(u => u.id === row.original.assignedTo)
             return h('span', { class: 'text-sm font-medium' }, user ? user.name : 'Unknown')
         }
     },

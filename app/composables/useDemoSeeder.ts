@@ -1,15 +1,10 @@
 // ============================================================================
 // Composable: useDemoSeeder
 // ============================================================================
-// Handles mass-seeding and resetting of ALL application data for demo purposes.
-// Seeds both the legacy user table (agent reference) and all Presidio stores.
+// Procedurally generates and seeds ALL application data for demo purposes.
+// Uses @faker-js/faker to generate realistic data based on the seederCount.
 
-import { mockStaffUsers } from '~/data/mock/users'
-import { mockGuests } from '~/data/mock/guests'
-import { mockRooms, mockRoomTypes } from '~/data/mock/rooms'
-import { mockReservations } from '~/data/mock/reservations'
-import { mockFolios, mockCharges, mockPayments } from '~/data/mock/folios'
-import { mockTasks } from '~/data/mock/tasks'
+import { faker } from '@faker-js/faker'
 
 export const useDemoSeeder = () => {
     // Legacy composable (agent table reference)
@@ -22,34 +17,175 @@ export const useDemoSeeder = () => {
     const reservationsStore = useReservationsStore()
     const foliosStore = useFoliosStore()
     const housekeepingStore = useHousekeepingStore()
+    const settingsStore = useSettingsStore()
 
     /**
-     * Seed all stores with mock data.
+     * Procedurally generate and seed all stores with mock data.
      */
     const seedAll = async () => {
         const { seederCount } = useDevSettings()
-        const count = seederCount.value
+        const count = seederCount.value || 10
 
-        // Legacy: seed agent table users from API
-        try {
-            const data = await $fetch('/api/users')
-            setUsers(data as any[])
-        } catch {
-            // API endpoint may not exist — skip legacy seeding
-        }
+        // 1. Staff Users
+        const systemRoles = ['Administrator', 'Front Desk', 'Billing', 'Housekeeping'] as const
+        const staffCount = Math.max(4, Math.floor(count / 5))
+        const generatedStaffUsers = Array.from({ length: staffCount }, (_, i) => ({
+            id: i + 1,
+            name: faker.person.fullName(),
+            email: faker.internet.email(),
+            password: 'password123',
+            role: faker.helpers.arrayElement(systemRoles),
+            isActive: true
+        }))
+        // Ensure at least one of each role exists so that login always works
+        systemRoles.forEach((role, i) => {
+            if (generatedStaffUsers[i]) {
+                generatedStaffUsers[i].role = role
+                generatedStaffUsers[i].password = `${role.toLowerCase().replace(/\s/g, '')}123`
+            }
+        })
 
-        // Presidio stores: seed from local mock data
-        usersStore.seed(mockStaffUsers.slice(0, count))
-        roomsStore.seed(mockRooms.slice(0, count), mockRoomTypes)
-        guestsStore.seed(mockGuests.slice(0, count))
-        reservationsStore.seed(mockReservations.slice(0, count))
-        foliosStore.seed(mockFolios.slice(0, count), mockCharges, mockPayments)
-        housekeepingStore.seed(mockTasks.slice(0, count))
+        // 2. Guests
+        const generatedGuests = Array.from({ length: count * 3 }, (_, i) => ({
+            id: i + 1,
+            firstName: faker.person.firstName(),
+            lastName: faker.person.lastName(),
+            email: faker.internet.email(),
+            phone: faker.phone.number(),
+            isVip: faker.datatype.boolean({ probability: 0.2 }),
+            company: faker.datatype.boolean() ? faker.company.name() : null
+        }))
+
+        // 3. Rooms & Room Types
+        const generatedRoomTypes = [
+            { id: 1, name: 'Standard', baseRate: 2500, maxOccupancy: 2 },
+            { id: 2, name: 'Deluxe', baseRate: 4200, maxOccupancy: 2 },
+            { id: 3, name: 'Family', baseRate: 5800, maxOccupancy: 4 },
+            { id: 4, name: 'Executive Suite', baseRate: 8500, maxOccupancy: 2 }
+        ]
+        const occupancyStatuses = ['Vacant', 'Occupied'] as const
+        const cleanStatuses = ['Clean', 'Dirty', 'Pickup', 'Inspected'] as const
+        const roomConditions = ['Normal', 'Maintenance'] as const
+
+        const generatedRooms = Array.from({ length: count }, (_, i) => {
+            const floor = Math.floor(i / 10) + 1
+            const roomNum = String((i % 10) + 1).padStart(2, '0')
+            return {
+                id: i + 1,
+                number: `${floor}${roomNum}`,
+                floor: floor,
+                roomTypeId: faker.number.int({ min: 1, max: 4 }),
+                rateOverride: null,
+                occupancyStatus: faker.helpers.arrayElement(occupancyStatuses),
+                cleanStatus: faker.helpers.arrayElement(cleanStatuses),
+                condition: faker.datatype.boolean({ probability: 0.1 }) ? 'Maintenance' : 'Normal'
+            }
+        })
+
+        // 4. Reservations
+        const reservationStatuses = ['Pending', 'Confirmed', 'In-House', 'Done', 'Cancelled'] as const
+        const bookingSources = ['Walk-in', 'Phone', 'OTA', 'Corporate'] as const
+        const resCount = Math.max(1, Math.floor(count * 0.8)) // roughly 80% occupancy equivalent
+
+        const generatedReservations = Array.from({ length: resCount }, (_, i) => {
+            const guest = faker.helpers.arrayElement(generatedGuests)
+            const room = faker.helpers.arrayElement(generatedRooms)
+            return {
+                id: i + 1,
+                bookingRef: `PRS-100${i + 1}`,
+                guestId: guest.id,
+                roomTypeId: room.roomTypeId,
+                roomId: faker.datatype.boolean({ probability: 0.8 }) ? room.id : null,
+                checkInDate: faker.date.recent({ days: 10 }).toISOString().split('T')[0],
+                checkOutDate: faker.date.soon({ days: 10 }).toISOString().split('T')[0],
+                status: faker.helpers.arrayElement(reservationStatuses),
+                source: faker.helpers.arrayElement(bookingSources)
+            }
+        })
+
+        // 5. Folios, Charges, Payments
+        const folioStatuses = ['Open', 'Closed', 'Settled'] as const
+        const chargeTypes = ['Room Charge', 'Mini Bar', 'Restaurant', 'Laundry', 'Misc'] as const
+        const paymentMethods = ['Cash', 'Credit Card', 'Bank Transfer'] as const
+
+        const generatedFolios: any[] = []
+        const generatedCharges: any[] = []
+        const generatedPayments: any[] = []
+
+        let chargeId = 1
+        let paymentId = 1
+
+        generatedReservations.forEach((res, index) => {
+            const folioId = index + 1
+            const balance = faker.number.int({ min: 1000, max: 20000 })
+
+            generatedFolios.push({
+                id: folioId,
+                folioNumber: `FOL-00${folioId}`,
+                guestId: res.guestId,
+                reservationId: res.id,
+                status: faker.helpers.arrayElement(folioStatuses),
+                balance,
+                openedAt: faker.date.recent().toISOString()
+            })
+
+            const numCharges = faker.number.int({ min: 1, max: 5 })
+            for (let c = 0; c < numCharges; c++) {
+                const quantity = faker.number.int({ min: 1, max: 3 })
+                const unitPrice = faker.number.int({ min: 200, max: 5000 })
+                generatedCharges.push({
+                    id: chargeId++,
+                    folioId,
+                    description: faker.commerce.productName(),
+                    type: faker.helpers.arrayElement(chargeTypes),
+                    unitPrice,
+                    quantity,
+                    total: quantity * unitPrice,
+                    postedAt: faker.date.recent().toISOString()
+                })
+            }
+
+            if (faker.datatype.boolean()) {
+                generatedPayments.push({
+                    id: paymentId++,
+                    folioId,
+                    amount: faker.number.int({ min: 1000, max: balance }),
+                    method: faker.helpers.arrayElement(paymentMethods),
+                    paymentDate: faker.date.recent().toISOString()
+                })
+            }
+        })
+
+        // 6. Housekeeping Tasks
+        const taskTypes = ['Cleaning', 'Turn-down', 'Maintenance'] as const
+        const taskStatuses = ['Pending', 'In Progress', 'Completed'] as const
+        const taskCount = Math.max(1, Math.floor(count * 0.6))
+
+        const generatedTasks = Array.from({ length: taskCount }, (_, i) => {
+            const room = faker.helpers.arrayElement(generatedRooms)
+            const staff = faker.datatype.boolean() ? faker.helpers.arrayElement(generatedStaffUsers) : null
+            const status = faker.helpers.arrayElement(taskStatuses)
+
+            return {
+                id: i + 1,
+                roomId: room.id,
+                assignedTo: staff ? staff.id : null,
+                taskType: faker.helpers.arrayElement(taskTypes),
+                status: status,
+                createdAt: faker.date.recent().toISOString(),
+                completedAt: status === 'Completed' ? faker.date.recent().toISOString() : null
+            }
+        })
+
+        // Apply generated data to Pinia stores
+        usersStore.seed(generatedStaffUsers as any[])
+        roomsStore.seed(generatedRooms as any[], generatedRoomTypes as any[])
+        guestsStore.seed(generatedGuests as any[])
+        reservationsStore.seed(generatedReservations as any[])
+        foliosStore.seed(generatedFolios as any[], generatedCharges as any[], generatedPayments as any[])
+        housekeepingStore.seed(generatedTasks as any[])
     }
 
-    /**
-     * Clear all local storage data across every store.
-     */
     const resetAll = async () => {
         clearUsers(true)
         usersStore.clear()
@@ -58,20 +194,11 @@ export const useDemoSeeder = () => {
         reservationsStore.clear()
         foliosStore.clear()
         housekeepingStore.clear()
+        settingsStore.clear()
     }
 
     return {
         seedAll,
-        resetAll,
-        // Expose mock data for direct access if needed
-        mockStaffUsers,
-        mockGuests,
-        mockRooms,
-        mockRoomTypes,
-        mockReservations,
-        mockFolios,
-        mockCharges,
-        mockPayments,
-        mockTasks
+        resetAll
     }
 }

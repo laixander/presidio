@@ -215,7 +215,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
             v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
             <template #empty>
                 <Empty :loading="guestsStore.isLoading" title="No guests found"
-                    description="Your guest directory is empty. Click 'Add Guest' to create a new profile."
+                    description="There are currently no guests to display. Add a new guest to get started."
                     icon="i-lucide-users" loading-title="Loading Guests"
                     loading-description="Please wait while we fetch the guest directory.">
                     <template #action>

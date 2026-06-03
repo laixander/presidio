@@ -9,6 +9,7 @@ export const useUsersStore = defineStore('users', () => {
     // ============================================================================
     const users = ref<StaffUser[]>([])
     const isHydrated = ref(false)
+    const isLoading = ref(false)
 
     // ============================================================================
     // Persistence
@@ -25,15 +26,6 @@ export const useUsersStore = defineStore('users', () => {
         const stored = localStorage.getItem(STORAGE_KEY)
         if (stored) {
             users.value = JSON.parse(stored)
-        } else {
-            // Initial mock data
-            users.value = [
-                { id: 1, name: 'Alice Admin', email: 'alice@presidio.com', password: 'password', role: 'Administrator', isActive: true },
-                { id: 2, name: 'Frank Frontdesk', email: 'frank@presidio.com', password: 'password', role: 'Front Desk', isActive: true },
-                { id: 3, name: 'Bill Billing', email: 'bill@presidio.com', password: 'password', role: 'Billing', isActive: true },
-                { id: 4, name: 'Helen Housekeeping', email: 'helen@presidio.com', password: 'password', role: 'Housekeeping', isActive: true }
-            ]
-            persist()
         }
         isHydrated.value = true
     }
@@ -91,6 +83,7 @@ export const useUsersStore = defineStore('users', () => {
     return {
         users,
         isHydrated,
+        isLoading,
         hydrate,
         getById,
         activeUsers,

@@ -12,9 +12,9 @@ definePageMeta({
     title: 'User Management',
     layout: 'dashboard',
     isTable: true,
-    headerActions: [
-        { label: 'Add User', icon: 'i-lucide-plus', event: 'addUser', color: 'primary' }
-    ]
+    // headerActions: [
+    //     { label: 'Add User', icon: 'i-lucide-plus', event: 'addUser', color: 'primary' }
+    // ]
 })
 
 const usersStore = useUsersStore()
@@ -22,8 +22,10 @@ const events = useEvents()
 const overlay = useOverlay()
 const toast = useAppToast()
 const authStore = useDemoAuth()
+const logger = useLogger('users')
 
 const isAuthorized = computed(() => authStore.currentRole.value === 'Administrator')
+const isDrawerOpen = ref(false)
 
 const userModal = overlay.create(UserModal)
 const confirmModal = overlay.create(ConfirmationModal)
@@ -36,9 +38,14 @@ events.on('addUser', () => {
         title: 'Add New User',
         onSubmit: (userData: Omit<StaffUser, 'id'>) => {
             usersStore.addUser(userData)
+            logger.addLog(`Added user: ${userData.name}`, 'Created', 'success')
             toast.success('User Added', `${userData.name} has been added successfully.`)
         }
     })
+})
+
+events.on('viewUserLogs', () => {
+    isDrawerOpen.value = true
 })
 
 // ============================================================================
@@ -50,6 +57,7 @@ const handleEditUser = (user: StaffUser) => {
         title: 'Edit User',
         onSubmit: (userData: Omit<StaffUser, 'id'>) => {
             usersStore.updateUser(user.id, userData)
+            logger.addLog(`Updated user: ${userData.name}`, 'Updated', 'warn')
             toast.success('User Updated', `${userData.name}'s profile has been updated.`)
         }
     })
@@ -63,6 +71,7 @@ const handleDeleteUser = (user: StaffUser) => {
         confirmColor: 'error',
         onConfirm: () => {
             usersStore.deleteUser(user.id)
+            logger.addLog(`Deleted user: ${user.name}`, 'Deleted', 'error')
             toast.success('User Deleted', `${user.name} has been removed.`)
         }
     })
@@ -111,6 +120,7 @@ const columns: TableColumn<StaffUser>[] = [
 ]
 
 const globalFilter = ref('')
+const viewMode = ref<'list' | 'card'>('list')
 </script>
 
 <template>
@@ -122,9 +132,78 @@ const globalFilter = ref('')
             variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
             <div class="flex justify-end gap-2 flex-1">
                 <UInput v-model="globalFilter" icon="i-lucide-search" placeholder="Search users..." class="w-full sm:w-64" />
+                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
+                v-model="viewMode" :content="false" size="xs" />
             </div>
         </UPageCard>
 
-        <UTable :data="usersStore.users" :columns="columns" :global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 overflow-y-auto scrollbar" />
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-history" color="neutral" variant="ghost" @click="events.emit('viewUserLogs')">Recent Activity</UButton>
+                <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addUser')">Add User</UButton>
+            </Teleport>
+        </ClientOnly>
+
+        <!-- List (table) view -->
+        <UTable v-if="viewMode === 'list'" :data="usersStore.users" :columns="columns" :loading="usersStore.isLoading" :global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 overflow-y-auto scrollbar">
+            <template #empty>
+                <Empty :loading="usersStore.isLoading" title="No users found"
+                    description="There are currently no users to display. Add a new user to get started."
+                    icon="i-lucide-user-cog" loading-title="Loading Users"
+                    loading-description="Please wait while we fetch your user inventory.">
+                    <template #action>
+                        <UButton label="Add First User" icon="i-lucide-plus" color="primary" size="lg"
+                            @click="events.emit('addUser')" />
+                    </template>
+                </Empty>
+            </template>
+        </UTable>
+
+        <!-- Card grid view -->
+        <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
+            <Empty v-if="!usersStore.isLoading && !usersStore.users.length"
+                title="No users found"
+                description="There are currently no users to display. Add a new user to get started."
+                icon="i-lucide-user-cog">
+                <template #action>
+                    <UButton label="Add First User" icon="i-lucide-plus" color="primary" size="lg"
+                        @click="events.emit('addUser')" />
+                </template>
+            </Empty>
+
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <UCard v-for="user in usersStore.users" :key="user.id" variant="subtle"
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    <template #header>
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold truncate pr-2">{{ user.name }}</h3>
+                                <p class="text-sm text-muted truncate">{{ user.email }}</p>
+                            </div>
+                            <UDropdownMenu :items="[[
+                                { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditUser(user) }
+                            ], [
+                                { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteUser(user) }
+                            ]]" :content="{ align: 'end' }" size="sm">
+                                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
+                            </UDropdownMenu>
+                        </div>
+                    </template>
+
+                    <div class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
+                        <div>
+                            <span class="text-muted">Role</span>
+                            <UBadge :label="user.role" color="neutral" variant="subtle" size="sm" />
+                        </div>
+                        <div>
+                            <span class="text-muted">Status</span>
+                            <UBadge :label="user.isActive ? 'Active' : 'Inactive'" :color="user.isActive ? 'success' : 'error'" variant="subtle" size="sm" />
+                        </div>
+                    </div>
+                </UCard>
+            </div>
+        </div>
+
+        <LogsDrawer v-model:open="isDrawerOpen" namespace="users" />
     </template>
 </template>

@@ -59,5 +59,5 @@ const isDevMode = computed(() => {
         </NuxtLayout>
     </UApp>
     <DemoFab v-if="showDemoFab" />
-    <DevTool v-if="isDevMode" v-model:open="open" />
+    <DevToolModal v-if="isDevMode" v-model:open="open" />
 </template>

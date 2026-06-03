@@ -11,4 +11,5 @@ export default defineNuxtPlugin(() => {
     useReservationsStore().hydrate()
     useFoliosStore().hydrate()
     useHousekeepingStore().hydrate()
+    useSettingsStore().hydrate()
 })
