@@ -1,8 +1,11 @@
 @import "./fonts.css";
 @import "tailwindcss" theme(static);
 @import "@nuxt/ui";
+@plugin "@tailwindcss/typography";
 
-@source "../../../tailwind.config.ts";
+/* @source "../../../tailwind.config.ts"; */
+@source inline("{group-hover:,,}{bg,text,ring,border,to,from}-{red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose}-{50,100,200,300,400,500,600,700,800,900,950}/10");
+@source inline("{group-hover:,,}{bg,text,ring,border,to,from}-{red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose}-{50,100,200,300,400,500,600,700,800,900,950}");
 
 @theme static {
     --font-sans: 'Geist', sans-serif;
@@ -17,8 +20,11 @@
 }
 
 @layer utilities {
-
     .scrollbar {
-        @apply [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-neutral-200 dark:[&::-webkit-scrollbar-track]:bg-neutral-100/5 [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-400/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-neutral-500
+        @apply [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-neutral-200 dark:[&::-webkit-scrollbar-track]:bg-neutral-100/5 [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-400/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-neutral-500
     }
+
+    /* .scrollbar {
+        @apply [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-neutral-200 dark:[&::-webkit-scrollbar-track]:bg-neutral-100/5 [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-400/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-neutral-500
+    } */
 }

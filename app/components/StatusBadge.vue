@@ -39,6 +39,18 @@ const colorMap: Record<string, BadgeColor> = {
     'Open': 'warning',
     'Closed': 'primary',
     'Settled': 'success',
+    // Room Types
+    'Standard': 'neutral',
+    'Deluxe': 'primary',
+    'Family': 'info',
+    'Executive Suite': 'warning',
+    // Users & Roles
+    'Administrator': 'primary',
+    'Front Desk': 'info',
+    'Billing': 'warning',
+    'Housekeeping': 'secondary',
+    'Active': 'success',
+    'Inactive': 'error',
     // Fallback
     'default': 'neutral'
 }

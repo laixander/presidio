@@ -73,14 +73,22 @@ const bookRoomType = (roomTypeId: number) => {
 </script>
 
 <template>
-    <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6">
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold">Search Availability</h1>
-            <p class="text-muted">Find available rooms for upcoming dates.</p>
+    <div class="w-full max-w-(--ui-container) mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-4">
+                <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="router.push('/frontdesk')" />
+                <div>
+                    <h1 class="text-2xl font-bold flex items-center gap-3">
+                        <UIcon name="i-lucide-search" class="text-primary" />
+                        Search Availability
+                    </h1>
+                    <p class="text-muted text-sm mt-1">Find available rooms for upcoming dates.</p>
+                </div>
+            </div>
         </div>
 
         <!-- Search Form -->
-        <UCard class="mb-8">
+        <UCard variant="subtle" class="shadow-sm">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <UFormField label="Check-In Date" name="checkIn">
                     <UInput v-model="checkIn" type="date" icon="i-lucide-calendar-days" class="w-full" />
@@ -102,7 +110,7 @@ const bookRoomType = (roomTypeId: number) => {
             <h2 class="text-lg font-semibold mb-4">Available Room Types</h2>
             
             <div v-if="availableRoomTypes.length > 0" class="space-y-4">
-                <UCard v-for="rt in availableRoomTypes" :key="rt.id" class="overflow-hidden">
+                <UCard variant="subtle" v-for="rt in availableRoomTypes" :key="rt.id" class="overflow-hidden shadow-sm">
                     <div class="flex flex-col sm:flex-row gap-6">
                         <!-- Image placeholder -->
                         <div class="w-full sm:w-48 h-32 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">

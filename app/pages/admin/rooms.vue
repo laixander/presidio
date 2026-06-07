@@ -10,6 +10,7 @@ import { UButton, UBadge, UDropdownMenu } from '#components'
 import type { Room } from '~/types'
 import RoomModal from '~/components/RoomModal.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
+import StatusBadge from '~/components/StatusBadge.vue'
 
 // ============================================================================
 // Page Configuration
@@ -95,30 +96,6 @@ function handleDeleteRoom(room: Room) {
 }
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
-
-function getOccupancyColor(status: string): BadgeColor {
-    return status === 'Occupied' ? 'warning' : 'success'
-}
-
-function getCleanColor(status: string): BadgeColor {
-    const map: Record<string, BadgeColor> = {
-        'Clean': 'success',
-        'Inspected': 'primary',
-        'Dirty': 'error',
-        'Pickup': 'warning'
-    }
-    return map[status] || 'neutral'
-}
-
-function getConditionColor(condition: string): BadgeColor {
-    return condition === 'Maintenance' ? 'error' : 'neutral'
-}
-
-// ============================================================================
 // Table Configuration
 // ============================================================================
 
@@ -143,10 +120,8 @@ const columns: TableColumn<Room>[] = [
         header: 'Type',
         cell: ({ row }) => {
             const roomType = roomsStore.getRoomType(row.original)
-            return h(UBadge, {
-                label: roomType?.name || 'Unknown',
-                variant: 'subtle',
-                color: 'primary'
+            return h(StatusBadge, {
+                status: roomType?.name || 'Unknown'
             })
         }
     },
@@ -166,10 +141,8 @@ const columns: TableColumn<Room>[] = [
         header: getSortableHeader('Occupancy'),
         cell: ({ row }) => {
             const status = row.getValue('occupancyStatus') as string
-            return h(UBadge, {
-                label: status,
-                color: getOccupancyColor(status),
-                variant: 'subtle'
+            return h(StatusBadge, {
+                status,
             })
         }
     },
@@ -178,10 +151,8 @@ const columns: TableColumn<Room>[] = [
         header: getSortableHeader('Clean Status'),
         cell: ({ row }) => {
             const status = row.getValue('cleanStatus') as string
-            return h(UBadge, {
-                label: status,
-                color: getCleanColor(status),
-                variant: 'subtle'
+            return h(StatusBadge, {
+                status,
             })
         }
     },
@@ -191,10 +162,8 @@ const columns: TableColumn<Room>[] = [
         cell: ({ row }) => {
             const condition = row.getValue('condition') as string
             if (condition === 'Normal') return condition
-            return h(UBadge, {
-                label: condition,
-                color: getConditionColor(condition),
-                variant: 'subtle'
+            return h(StatusBadge, {
+                status: condition,
             })
         }
     },
@@ -244,6 +213,22 @@ const columnVisibility = ref({
 const viewMode = ref<'list' | 'card'>('list')
 const authStore = useDemoAuth()
 
+const filteredRooms = computed(() => {
+    if (!globalFilter.value) return roomsStore.rooms
+    const search = globalFilter.value.toLowerCase()
+    return roomsStore.rooms.filter(room => {
+        const typeName = roomsStore.getRoomType(room)?.name || ''
+        return (
+            room.number.toLowerCase().includes(search) ||
+            room.floor.toString().includes(search) ||
+            room.occupancyStatus.toLowerCase().includes(search) ||
+            room.cleanStatus.toLowerCase().includes(search) ||
+            room.condition.toLowerCase().includes(search) ||
+            typeName.toLowerCase().includes(search)
+        )
+    })
+})
+
 const isAuthorized = computed(() => authStore.currentRole.value === 'Administrator')
 </script>
 
@@ -255,10 +240,8 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         description="Manage hotel room inventory, status, and pricing."
         variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
         <div class="flex justify-end gap-2 flex-1">
-            <template v-if="viewMode === 'list'">
-                <TableGlobalFilter v-model="globalFilter" />
-                <TableColumnToggle :table="table" />
-            </template>
+            <TableGlobalFilter v-model="globalFilter" />
+            <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
             <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
                 v-model="viewMode" :content="false" size="xs" />
         </div>
@@ -266,7 +249,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
 
     <ClientOnly>
         <Teleport to="#header-actions-teleport">
-            <UButton icon="i-lucide-history" color="neutral" variant="ghost" @click="events.emit('viewRoomLogs')">Recent Activity</UButton>
+            <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewRoomLogs')">Recent Activity</UButton>
             <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addRoom')">Add Room</UButton>
         </Teleport>
     </ClientOnly>
@@ -290,7 +273,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
 
     <!-- Card grid view -->
     <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
-        <Empty v-if="!roomsStore.isLoading && !roomsStore.rooms.length"
+        <Empty v-if="!roomsStore.isLoading && !filteredRooms.length"
             title="No rooms found"
             description="There are currently no rooms to display. Add a new room to get started."
             icon="i-lucide-bed-double">
@@ -301,15 +284,14 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         </Empty>
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <UCard v-for="room in roomsStore.rooms" :key="room.id" variant="subtle"
+            <UCard v-for="room in filteredRooms" :key="room.id" variant="subtle"
                 class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
                 <template #header>
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-xs text-muted">Floor {{ room.floor }}</p>
                             <h3 class="text-lg font-bold">Room {{ room.number }}</h3>
-                            <UBadge :label="roomsStore.getRoomType(room)?.name || 'Unknown'"
-                                variant="subtle" color="primary" size="sm" class="mt-1" />
+                            <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
                         </div>
                         <UDropdownMenu :items="[[
                             { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditRoom(room) }
@@ -330,16 +312,15 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
                     </div>
                     <div>
                         <span class="text-muted">Occupancy</span>
-                        <UBadge :label="room.occupancyStatus" :color="getOccupancyColor(room.occupancyStatus)" variant="subtle" size="sm" />
+                        <StatusBadge :status="room.occupancyStatus" />
                     </div>
                     <div>
                         <span class="text-muted">Clean Status</span>
-                        <UBadge :label="room.cleanStatus" :color="getCleanColor(room.cleanStatus)" variant="subtle" size="sm" />
+                        <StatusBadge :status="room.cleanStatus" />
                     </div>
                     <div>
                         <span class="text-muted">Condition</span>
-                        <UBadge v-if="room.condition !== 'Normal'" :label="room.condition"
-                            :color="getConditionColor(room.condition)" variant="subtle" size="sm" />
+                        <StatusBadge v-if="room.condition !== 'Normal'" :status="room.condition" />
                         <span v-else class="text-default">Normal</span>
                     </div>
                 </div>

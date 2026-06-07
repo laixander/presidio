@@ -62,10 +62,7 @@ const nights = computed(() => {
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <ClientOnly>
-                <Teleport to="#header-actions-teleport">
+                <div class="flex gap-2">
                     <UButton 
                         v-if="reservation.status === 'Pending' || reservation.status === 'Confirmed'"
                         label="Check-In Guest" 
@@ -84,17 +81,17 @@ const nights = computed(() => {
                     <UButton 
                         v-if="folio"
                         label="View Folio" 
-                        icon="i-lucide-receipt" 
+                        icon="i-lucide-receipt-text" 
                         color="neutral" 
-                        variant="outline"
+                        variant="soft"
                         @click="router.push(`/billing/folios/${folio.id}`)"
                     />
-                </Teleport>
-            </ClientOnly>
+                </div>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Guest Info -->
-                <UCard class="shadow-sm">
+                <UCard variant="subtle" class="shadow-sm">
                     <template #header>
                         <div class="flex items-center gap-2 font-semibold text-lg">
                             <UIcon name="i-lucide-user" class="text-primary size-5" />
@@ -120,7 +117,7 @@ const nights = computed(() => {
                 </UCard>
 
                 <!-- Stay Info -->
-                <UCard class="shadow-sm">
+                <UCard variant="subtle" class="shadow-sm">
                     <template #header>
                         <div class="flex items-center gap-2 font-semibold text-lg">
                             <UIcon name="i-lucide-calendar" class="text-primary size-5" />
@@ -153,7 +150,7 @@ const nights = computed(() => {
                 </UCard>
 
                 <!-- Room Info -->
-                <UCard class="shadow-sm md:col-span-2">
+                <UCard variant="subtle" class="shadow-sm md:col-span-2">
                     <template #header>
                         <div class="flex items-center gap-2 font-semibold text-lg">
                             <UIcon name="i-lucide-door-open" class="text-primary size-5" />

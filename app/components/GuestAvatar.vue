@@ -31,7 +31,7 @@ const fullName = computed(() => {
                 :text="initials"
                 :size="size"
                 :alt="fullName"
-                class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 ring-1 ring-primary-200 dark:ring-primary-800"
+                class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 ring-2 ring-primary-200 dark:ring-primary-800 leading-none text-sm"
             />
             <div v-if="guest?.isVip" class="absolute -top-1 -right-1 bg-amber-400 text-white rounded-full p-0.5 shadow-sm ring-2 ring-white dark:ring-neutral-900 flex items-center justify-center">
                 <UIcon name="i-lucide-crown" class="w-3 h-3 block" />

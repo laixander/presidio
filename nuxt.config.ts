@@ -39,5 +39,36 @@ export default defineNuxtConfig({
         'zod',
       ]
     }
+  },
+  ui: {
+    theme: {
+      colors: [
+        'primary',
+        'secondary',
+        'tertiary',
+        'info',
+        'success',
+        'warning',
+        'error',
+        // Full Tailwind palette
+        'red',
+        'orange',
+        'amber',
+        'yellow',
+        'lime',
+        'green',
+        'emerald',
+        'teal',
+        'cyan',
+        'sky',
+        'blue',
+        'indigo',
+        'violet',
+        'purple',
+        'fuchsia',
+        'pink',
+        'rose',
+      ]
+    }
   }
 })

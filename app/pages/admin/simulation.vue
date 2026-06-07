@@ -14,6 +14,13 @@ definePageMeta({
 
 const sim = useSimulation()
 const loggerStore = useLogger('simulation') // Access the raw logs
+const events = useEvents()
+
+const isDrawerOpen = ref(false)
+
+events.on('viewSimulationLogs', () => {
+    isDrawerOpen.value = true
+})
 
 const totalWeight = computed(() => 
     sim.weights.value.booking + 
@@ -45,13 +52,20 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
 <template>
     <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be an Administrator to access the Simulation Engine." icon="i-lucide-lock" />
 
-    <div v-else class="w-full max-w-(--ui-container) mx-auto space-y-6">
+    <div v-else class="w-full max-w-4xl mx-auto space-y-6">
         <UPageCard title="Engine Control"
             description="Control the automated background simulation engine."
-            variant="naked" orientation="horizontal" />
+            variant="naked" orientation="horizontal">
+            <div class="flex items-center justify-end w-full">
+                <UButton label="View Logs" trailing-icon="i-lucide-arrow-right" color="neutral" variant="soft" class="w-fit" to="/admin/simulation-logs" />
+            </div>
+        </UPageCard>
+        
         <ClientOnly>
             <Teleport to="#header-actions-teleport">
-                <UButton label="View Logs" icon="i-lucide-activity" color="neutral" variant="outline" to="/admin/simulation-logs" />
+                <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewSimulationLogs')">
+                    Recent Activity
+                </UButton>
             </Teleport>
         </ClientOnly>
                 
@@ -80,52 +94,78 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
         </div>
 
         <!-- Transport Controls -->
-        <UCard variant="solid" :ui="{ body: 'flex items-center h-full relative z-10' }" class="flex-1 bg-gradient-to-br from-neutral-900 to-neutral-950 overflow-hidden relative shadow-xl shadow-primary/10 ring-1 ring-primary-500/30">
-            <!-- Premium ambient glow effects -->
-            <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-500/20 blur-[64px] rounded-full pointer-events-none"></div>
-            <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-primary-600/10 blur-[64px] rounded-full pointer-events-none"></div>
+        <UCard
+            :ui="{ body: 'flex items-center h-full relative z-10 py-8' }"
+            :class="[
+                'flex-1 overflow-hidden relative transition-all duration-700',
+                sim.isRunning.value
+                    ? [
+                        // Light mode: crisp white base with a cool primary tint
+                        'bg-gradient-to-br from-white via-primary-50/60 to-slate-50',
+                        // Dark mode: deep cockpit dark with primary warmth
+                        'dark:bg-gradient-to-br dark:from-neutral-950 dark:via-neutral-900/95 dark:to-neutral-950',
+                        // Ring & shadow
+                        'ring-2 ring-primary-500/40 shadow-2xl shadow-primary-500/20'
+                    ]
+                    : 'shadow-sm'
+            ]"
+        >
+            <!-- Premium ambient glow effects (active when running) -->
+            <Transition name="glow-fade">
+                <div v-if="sim.isRunning.value" class="pointer-events-none absolute inset-0 overflow-hidden">
+                    <!-- Top-right orb: primary -->
+                    <div class="absolute -top-16 -right-16 w-72 h-72 rounded-full blur-[80px] animate-pulse
+                        bg-primary-400/30 dark:bg-primary-500/35"></div>
+                    <!-- Bottom-left orb: violet accent -->
+                    <div class="absolute -bottom-16 -left-16 w-72 h-72 rounded-full blur-[80px] animate-pulse [animation-delay:1.2s]
+                        bg-violet-400/20 dark:bg-primary-600/25"></div>
+                    <!-- Center orb: subtle core glow -->
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-[60px]
+                        bg-primary-300/15 dark:bg-primary-400/15"></div>
+                    <!-- Animated border ping -->
+                    <div class="absolute inset-0 rounded-[inherit] ring-2 ring-primary-400/25 animate-ping [animation-duration:2.5s]"></div>
+                </div>
+            </Transition>
             
             <div class="flex flex-wrap items-center justify-center gap-2 flex-1">
-                <UFieldGroup>
-                    <UButton 
-                        icon="i-lucide-rotate-ccw" 
-                        label="Reset"
-                        color="neutral" 
-                        variant="soft" 
-                        @click="sim.reset" 
-                        :ui="transportBtnUi"
-                    />
-                    <UButton 
-                        v-if="!sim.isRunning.value"
-                        icon="i-lucide-play" 
-                        label="Start"
-                        color="primary" 
-                        @click="sim.start" 
-                        :ui="transportBtnUi"
-                    />
-                    <UButton 
-                        v-else
-                        icon="i-lucide-pause" 
-                        label="PAUSE"
-                        color="warning" 
-                        @click="sim.pause" 
-                        :ui="transportBtnUi"
-                    />
-                    <UButton 
-                        icon="i-lucide-step-forward" 
-                        label="Step"
-                        color="primary" 
-                        variant="soft" 
-                        :disabled="sim.isRunning.value"
-                        @click="sim.step" 
-                        :ui="transportBtnUi"
-                    />
-                </UFieldGroup>
+                <UButton 
+                    icon="i-lucide-rotate-ccw" 
+                    label="Reset"
+                    color="neutral" 
+                    variant="outline" 
+                    @click="sim.reset" 
+                    :ui="transportBtnUi"
+                />
+                <UButton 
+                    v-if="!sim.isRunning.value"
+                    icon="i-lucide-play" 
+                    label="Start"
+                    color="primary" 
+                    @click="sim.start" 
+                    :ui="transportBtnUi"
+                />
+                <UButton 
+                    v-else
+                    icon="i-lucide-pause" 
+                    label="PAUSE"
+                    color="warning" 
+                    @click="sim.pause" 
+                    :ui="transportBtnUi"
+                />
+                <UButton 
+                    icon="i-lucide-step-forward" 
+                    label="Step"
+                    color="primary" 
+                    variant="soft" 
+                    :disabled="sim.isRunning.value"
+                    @click="sim.step" 
+                    :ui="transportBtnUi"
+                />
             </div>
         </UCard>
 
         <!-- Configuration -->
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="mt-8 grid grid-cols-1 gap-8">
             <!-- Speed -->
             <div>
                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
@@ -203,5 +243,18 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
                 </UCard>
             </div>
         </div>
+
+        <LogsDrawer v-model:open="isDrawerOpen" namespace="simulation-actions" />
     </div>
 </template>
+
+<style scoped>
+.glow-fade-enter-active,
+.glow-fade-leave-active {
+    transition: opacity 0.6s ease;
+}
+.glow-fade-enter-from,
+.glow-fade-leave-to {
+    opacity: 0;
+}
+</style>

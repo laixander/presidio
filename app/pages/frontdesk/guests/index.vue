@@ -20,9 +20,9 @@ definePageMeta({
     title: 'Guests',
     layout: 'dashboard',
     isTable: true,
-    headerActions: [
-        { label: 'Add Guest', icon: 'i-lucide-plus', event: 'addGuest', color: 'primary' }
-    ]
+    // headerActions: [
+    //     { label: 'Add Guest', icon: 'i-lucide-plus', event: 'addGuest', color: 'primary' }
+    // ]
 })
 
 // ============================================================================
@@ -31,7 +31,7 @@ definePageMeta({
 const guestsStore = useGuestsStore()
 const events = useEvents()
 const overlay = useOverlay()
-const logger  = useLogger('guests')
+const appLogger = useAppLogger()
 const toast   = useAppToast()
 const router  = useRouter()
 
@@ -39,6 +39,7 @@ const guestModal   = overlay.create(GuestModal)
 const confirmModal = overlay.create(ConfirmationModal)
 
 const isAddGuestOpen = ref(false)
+const isDrawerOpen = ref(false)
 
 // ============================================================================
 // Event Listeners
@@ -47,13 +48,17 @@ events.on('addGuest', () => {
     isAddGuestOpen.value = true
 })
 
+events.on('viewGuestLogs', () => {
+    isDrawerOpen.value = true
+})
+
 // ============================================================================
 // Methods
 // ============================================================================
 
 async function handleAddGuest(guestData: Omit<Guest, 'id'>) {
     guestsStore.addGuest(guestData)
-    logger.addLog(`Added guest: ${guestData.firstName} ${guestData.lastName}`, 'Created', 'success')
+    appLogger.logGuestAdded(`${guestData.firstName} ${guestData.lastName}`)
     toast.success('Guest Added', `${guestData.firstName} ${guestData.lastName} has been added to the directory.`)
     isAddGuestOpen.value = false
 }
@@ -70,7 +75,7 @@ function handleEditGuest(guest: Guest) {
                 confirmColor: 'warning',
                 onConfirm: () => {
                     guestsStore.updateGuest(guest.id, guestData)
-                    logger.addLog(`Updated guest: ${guestData.firstName} ${guestData.lastName}`, 'Updated', 'warn')
+                    appLogger.logGuestUpdated(`${guestData.firstName} ${guestData.lastName}`)
                     toast.success('Guest Updated', `${guestData.firstName} ${guestData.lastName}'s profile has been updated.`)
                 }
             })
@@ -86,7 +91,7 @@ function handleDeleteGuest(guest: Guest) {
         confirmColor: 'error',
         onConfirm: () => {
             guestsStore.deleteGuest(guest.id)
-            logger.addLog(`Deleted guest: ${guest.firstName} ${guest.lastName}`, 'Deleted', 'error')
+            appLogger.logGuestDeleted(`${guest.firstName} ${guest.lastName}`)
             toast.success('Guest Deleted', `${guest.firstName} ${guest.lastName} has been removed from the directory.`)
         }
     })
@@ -193,7 +198,23 @@ const globalFilter = ref('')
 const columnVisibility = ref({
     id: false
 })
+const viewMode = ref<'list' | 'card'>('list')
 const authStore = useDemoAuth()
+
+const filteredGuests = computed(() => {
+    if (!globalFilter.value) return guestsStore.guests
+    const search = globalFilter.value.toLowerCase()
+    return guestsStore.guests.filter(guest => {
+        return (
+            guest.firstName.toLowerCase().includes(search) ||
+            guest.lastName.toLowerCase().includes(search) ||
+            (guest.email && guest.email.toLowerCase().includes(search)) ||
+            (guest.phone && guest.phone.toLowerCase().includes(search)) ||
+            (guest.company && guest.company.toLowerCase().includes(search))
+        )
+    })
+})
+
 const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value ?? ''))
 </script>
 
@@ -206,11 +227,24 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
             variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
             <div class="flex justify-end gap-2 flex-1">
                 <TableGlobalFilter v-model="globalFilter" placeholder="Search guests..." />
-                <TableColumnToggle :table="table" />
+                <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
+                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
+                    v-model="viewMode" :content="false" size="xs" />
             </div>
         </UPageCard>
 
-        <UTable sticky ref="table" :data="guestsStore.guests" :columns="columns"
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewGuestLogs')">
+                    Recent Activity
+                </UButton>
+                <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addGuest')">
+                    Add Guest
+                </UButton>
+            </Teleport>
+        </ClientOnly>
+
+        <UTable v-if="viewMode === 'list'" sticky ref="table" :data="guestsStore.guests" :columns="columns"
             :loading="guestsStore.isLoading" v-model:column-visibility="columnVisibility"
             v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
             <template #empty>
@@ -226,6 +260,62 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
             </template>
         </UTable>
 
+        <!-- Card grid view -->
+        <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
+            <Empty v-if="!guestsStore.isLoading && !filteredGuests.length"
+                title="No guests found"
+                description="There are currently no guests to display. Add a new guest to get started."
+                icon="i-lucide-users">
+                <template #action>
+                    <UButton label="Add First Guest" icon="i-lucide-plus" color="primary" size="lg"
+                        @click="events.emit('addGuest')" />
+                </template>
+            </Empty>
+
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <UCard v-for="guest in filteredGuests" :key="guest.id" variant="subtle"
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    <template #header>
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <GuestAvatar :guest="guest" size="md" />
+                                <div>
+                                    <h3 class="text-lg font-bold">{{ guestsStore.getFullName(guest) }}</h3>
+                                    <p class="text-xs text-muted">{{ guest.company || 'No Company' }}</p>
+                                </div>
+                            </div>
+                            <UDropdownMenu :items="[[
+                                { label: 'View Profile', icon: 'i-lucide-user', onSelect: () => router.push(`/frontdesk/guests/${guest.id}`) },
+                                { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditGuest(guest) }
+                            ], [
+                                { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteGuest(guest) }
+                            ]]" :content="{ align: 'end' }" size="sm">
+                                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
+                            </UDropdownMenu>
+                        </div>
+                    </template>
+
+                    <div class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
+                        <div>
+                            <span class="text-muted">VIP Status</span>
+                            <UBadge v-if="guest.isVip" label="VIP" color="warning" variant="subtle" size="sm" />
+                            <span v-else class="text-default">Standard</span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Email</span>
+                            <span class="truncate max-w-[150px]" :title="guest.email">{{ guest.email || 'N/A' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Phone</span>
+                            <span>{{ guest.phone || 'N/A' }}</span>
+                        </div>
+                    </div>
+                </UCard>
+            </div>
+        </div>
+
         <GuestModal v-model:open="isAddGuestOpen" @submit="handleAddGuest" />
+
+        <LogsDrawer v-model:open="isDrawerOpen" namespace="guests" />
     </template>
 </template>

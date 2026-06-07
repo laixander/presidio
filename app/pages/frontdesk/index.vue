@@ -5,9 +5,9 @@
 definePageMeta({
     title: 'Front Desk',
     layout: 'dashboard',
-    headerActions: [
-        { label: 'Search Availability', icon: 'i-lucide-search', event: 'searchAvailability', color: 'primary' }
-    ]
+    // headerActions: [
+    //     { label: 'Search Availability', icon: 'i-lucide-search', event: 'searchAvailability', color: 'primary' }
+    // ]
 })
 
 // ============================================================================
@@ -130,6 +130,14 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
     <template v-else>
         <UPageCard title="Front Desk Overview" description="Manage today's arrivals, departures, and in-house guests."
             variant="naked" orientation="horizontal" class="rounded-none" />
+
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-search" color="primary" @click="events.emit('searchAvailability')">
+                    Search Availability
+                </UButton>
+            </Teleport>
+        </ClientOnly>
 
         <!-- ── KPI Stat Cards ──────────────────────────────────────────────── -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">

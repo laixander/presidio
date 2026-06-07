@@ -1,10 +1,15 @@
 <script setup lang="ts">
+
 // ============================================================================
 // Composables & State
 // ============================================================================
 const { seedAll, resetAll } = useDemoSeeder()
 const { isLoading } = useUsers()
 const toast = useAppToast()
+const roomsStore = useRoomsStore()
+
+// Derived from whether any rooms exist in the store
+const isDataDeployed = computed(() => roomsStore.rooms.length > 0)
 
 // ============================================================================
 // Methods
@@ -46,12 +51,35 @@ const handleReset = async () => {
 // ============================================================================
 // Configuration
 // ============================================================================
-const items = [
+const staticGroups = [
     [
         {
-            label: 'Login',
-            icon: 'i-lucide-lock',
+            label: 'Presidio',
+            icon: 'i-lucide-hotel',
+            color: 'primary',
             to: '/'
+        }
+    ],
+    [
+        {
+            label: 'Presentation',
+            icon: 'i-lucide-airplay',
+            to: '/docs/presentation'
+        },
+        {
+            label: 'Documentation',
+            icon: 'i-lucide-book',
+            to: '/docs/documentation'
+        },
+        {
+            label: 'User Manual',
+            icon: 'i-lucide-user',
+            to: '/docs/user-manual'
+        },
+        {
+            label: 'Implementation',
+            icon: 'i-lucide-construction',
+            to: '/docs/implementation'
         },
         {
             label: 'Agent Kit',
@@ -60,26 +88,39 @@ const items = [
         },
         {
             label: 'Changelog',
-            icon: 'i-lucide-clipboard',
+            icon: 'i-lucide-file-text',
             to: '/docs/changelog'
         },
     ],
-    [
-        {
-            label: 'Deploy Demo Data',
-            icon: 'i-lucide-database-zap',
-            onSelect: handleSeed
-        }
-    ],
-    [
-        {
-            label: 'Reset System',
-            icon: 'i-lucide-trash-2',
-            class: 'text-red-500',
-            onSelect: handleReset
-        }
-    ]
-] as any[][]
+]
+
+const items = computed(() => {
+    const groups: any[][] = [...staticGroups]
+
+    if (isDataDeployed.value) {
+        // Reset group
+        groups.push([
+            {
+                label: 'Reset System',
+                icon: 'i-lucide-trash-2',
+                color: 'error',
+                onSelect: handleReset
+            }
+        ])
+    } else {
+        // Seed group
+        groups.push([
+            {
+                label: 'Deploy Demo Data',
+                icon: 'i-lucide-database-zap',
+                color: 'success',
+                onSelect: handleSeed
+            }
+        ])
+    }
+
+    return groups
+})
 
 // ============================================================================
 // Draggable Logic

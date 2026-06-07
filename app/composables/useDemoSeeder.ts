@@ -51,7 +51,7 @@ export const useDemoSeeder = () => {
             firstName: faker.person.firstName(),
             lastName: faker.person.lastName(),
             email: faker.internet.email(),
-            phone: faker.phone.number(),
+            phone: faker.phone.number({ style: 'national' }),
             isVip: faker.datatype.boolean({ probability: 0.2 }),
             company: faker.datatype.boolean() ? faker.company.name() : null
         }))

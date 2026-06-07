@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { RoomType } from '~/types'
+import ConfirmationModal from '~/components/ConfirmationModal.vue'
 
 definePageMeta({
     title: 'Settings',
@@ -13,6 +14,16 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
 const roomsStore = useRoomsStore()
 const settingsStore = useSettingsStore()
 const toast = useAppToast()
+const appLogger = useAppLogger()
+const events = useEvents()
+const overlay = useOverlay()
+const confirmModal = overlay.create(ConfirmationModal)
+
+const isDrawerOpen = ref(false)
+
+events.on('viewSettingsLogs', () => {
+    isDrawerOpen.value = true
+})
 
 const tabs = [
     { label: 'General Settings', icon: 'i-lucide-settings', slot: 'general' },
@@ -23,8 +34,16 @@ const tabs = [
 const generalState = ref({ ...settingsStore.settings })
 
 const saveGeneralSettings = () => {
-    settingsStore.updateSettings(generalState.value)
-    toast.success('Settings Saved', 'General configuration has been updated successfully.')
+    confirmModal.open({
+        title: 'Save Settings',
+        description: 'Are you sure you want to save changes to the general settings?',
+        confirmLabel: 'Save',
+        onConfirm: () => {
+            settingsStore.updateSettings(generalState.value)
+            appLogger.logSettingsUpdated()
+            toast.success('Settings Saved', 'General configuration has been updated successfully.')
+        }
+    })
 }
 
 // Room Types Management
@@ -57,24 +76,41 @@ const openEditRoomTypeModal = (rt: RoomType) => {
 }
 
 const saveRoomType = () => {
-    if (editingRoomType.value) {
-        roomsStore.updateRoomType(editingRoomType.value.id, roomTypeForm.value)
-        toast.success('Room Type Updated', `Successfully updated ${roomTypeForm.value.name}.`)
-    } else {
-        roomsStore.addRoomType(roomTypeForm.value)
-        toast.success('Room Type Created', `Successfully created ${roomTypeForm.value.name}.`)
-    }
-    isRoomTypeModalOpen.value = false
+    confirmModal.open({
+        title: editingRoomType.value ? 'Edit Room Type' : 'Create Room Type',
+        description: `Are you sure you want to ${editingRoomType.value ? 'save changes to' : 'create'} ${roomTypeForm.value.name}?`,
+        confirmLabel: 'Save',
+        onConfirm: () => {
+            if (editingRoomType.value) {
+                roomsStore.updateRoomType(editingRoomType.value.id, roomTypeForm.value)
+                appLogger.logRoomTypeUpdated(roomTypeForm.value.name)
+                toast.success('Room Type Updated', `Successfully updated ${roomTypeForm.value.name}.`)
+            } else {
+                roomsStore.addRoomType(roomTypeForm.value)
+                appLogger.logRoomTypeAdded(roomTypeForm.value.name)
+                toast.success('Room Type Created', `Successfully created ${roomTypeForm.value.name}.`)
+            }
+            isRoomTypeModalOpen.value = false
+        }
+    })
 }
 
 const deleteRoomType = (rt: RoomType) => {
-    if (!confirm(`Are you sure you want to delete ${rt.name}?`)) return
-    const result = roomsStore.deleteRoomType(rt.id)
-    if (result.success) {
-        toast.success('Room Type Deleted', `Successfully deleted ${rt.name}.`)
-    } else {
-        toast.error('Deletion Failed', result.message || 'Cannot delete room type.')
-    }
+    confirmModal.open({
+        title: 'Delete Room Type',
+        description: `Are you sure you want to delete ${rt.name}? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        confirmColor: 'error',
+        onConfirm: () => {
+            const result = roomsStore.deleteRoomType(rt.id)
+            if (result.success) {
+                appLogger.logRoomTypeDeleted(rt.name)
+                toast.success('Room Type Deleted', `Successfully deleted ${rt.name}.`)
+            } else {
+                toast.error('Deletion Failed', result.message || 'Cannot delete room type.')
+            }
+        }
+    })
 }
 
 const formatCurrency = (val: number) => {
@@ -90,10 +126,18 @@ const formatCurrency = (val: number) => {
             description="Configure global application preferences and manage room classifications."
             variant="naked" orientation="horizontal" />
 
-        <UTabs :items="tabs" class="w-full">
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewSettingsLogs')">
+                    Recent Activity
+                </UButton>
+            </Teleport>
+        </ClientOnly>
+
+        <UTabs :items="tabs" variant="link" class="w-full">
             <!-- General Settings Tab -->
             <template #general>
-                <UCard title="General Configuration" description="Manage basic hotel information." variant="subtle" class="shadow-sm">                    
+                <UCard title="General Configuration" description="Manage basic hotel information." variant="subtle" class="shadow-sm mt-4 w-fit">                    
                     <UForm :state="generalState" @submit="saveGeneralSettings" class="space-y-6 max-w-xl">
                         <UFormField label="Hotel Name">
                             <UInput v-model="generalState.hotelName" class="w-full" />
@@ -119,14 +163,14 @@ const formatCurrency = (val: number) => {
 
             <!-- Room Types Tab -->
             <template #room-types>
-                <UCard title="Room Types" description="Manage room classifications, capacities, and base rates." variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="shadow-sm">                    
+                <UCard title="Room Types" description="Manage room classifications, capacities, and base rates." variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="mt-4 shadow-sm">                    
                     <template #header>
                         <div class="flex justify-between items-center">
                             <div>
                                 <h3 class="font-semibold">Room Types</h3>
                                 <p class="text-sm text-muted">Manage room classifications, capacities, and base rates.</p>
                             </div>
-                            <UButton icon="i-lucide-plus" color="primary" variant="subtle" @click="openNewRoomTypeModal">
+                            <UButton icon="i-lucide-plus" color="primary" variant="soft" @click="openNewRoomTypeModal">
                                 New Room Type
                             </UButton>
                         </div>
@@ -188,5 +232,7 @@ const formatCurrency = (val: number) => {
                 </div>
             </template>
         </UModal>
+
+        <LogsDrawer v-model:open="isDrawerOpen" namespace="settings" />
     </div>
 </template>

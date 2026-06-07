@@ -47,7 +47,20 @@ const items = computed<DropdownMenuItem[][]>(() => [
                 authStore.setRole(role)
             }
         }))
-    }],
+    },
+{
+        label: 'Show All Pages',
+        icon: 'i-lucide-layout-list',
+        type: 'checkbox',
+        checked: authStore.showAllPages.value,
+        onUpdateChecked: (checked: boolean) => {
+            authStore.setShowAllPages(checked)
+        },
+        onSelect: (e: Event) => {
+            e.preventDefault()
+        }
+    }
+    ],
     // Theme options
     [{
         label: 'Theme Color',
@@ -115,18 +128,18 @@ const items = computed<DropdownMenuItem[][]>(() => [
         }]
     }],
     // Options
-    [{
-        label: 'Show All Pages',
-        icon: 'i-lucide-layout-list',
-        type: 'checkbox',
-        checked: authStore.showAllPages.value,
-        onUpdateChecked: (checked: boolean) => {
-            authStore.setShowAllPages(checked)
-        },
-        onSelect: (e: Event) => {
-            e.preventDefault()
-        }
-    }],
+    // [{
+    //     label: 'Show All Pages',
+    //     icon: 'i-lucide-layout-list',
+    //     type: 'checkbox',
+    //     checked: authStore.showAllPages.value,
+    //     onUpdateChecked: (checked: boolean) => {
+    //         authStore.setShowAllPages(checked)
+    //     },
+    //     onSelect: (e: Event) => {
+    //         e.preventDefault()
+    //     }
+    // }],
     // Logout
     [{
         label: 'Log out',

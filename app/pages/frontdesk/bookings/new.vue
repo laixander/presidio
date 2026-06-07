@@ -98,7 +98,7 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
             </div>
         </div>
 
-        <UCard>
+        <UCard variant="subtle" class="shadow-sm">
             <UForm :schema="schema" :state="state" class="space-y-6" @submit="handleSubmit">
                 
                 <!-- Guest Selection -->

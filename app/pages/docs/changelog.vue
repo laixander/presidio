@@ -32,8 +32,62 @@ interface ChangelogEntry {
 
 const changelogs: ChangelogEntry[] = [
     {
-        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-        version: 'v1.0.0',
+        date: 'June 5, 2026',
+        version: 'v1.0.5',
+        title: 'Audit Logging & UI Standardization',
+        description: 'Comprehensive logging architecture with namespace drawers, unified confirmation flows, and new grid views.',
+        changes: [
+            { type: 'feature', text: 'Implemented global useAppLogger for robust system and user activity tracking.' },
+            { type: 'feature', text: 'Added Recent Activity LogsDrawer to Guests, Reservations, Rooms, Users, Simulation, Reports, and Settings modules.' },
+            { type: 'feature', text: 'Built interactive Card Grid view toggle for the Reservations directory.' },
+            { type: 'refactor', text: 'Standardized all CRUD and destructive actions to use the global ConfirmationModal.' },
+            { type: 'refactor', text: 'Unified StatusBadge styling and component usage across all module tables.' },
+            { type: 'fix', text: 'Resolved Faker.js deprecation warnings and TypeScript mismatched types for generated phone numbers.' }
+        ]
+    },
+    {
+        date: 'June 3, 2026',
+        version: 'v1.0.4',
+        title: 'Premium UI & User Experience Refinements',
+        description: 'Enhanced component styling across multiple modules, improved search capabilities, and refined developer tools.',
+        changes: [
+            { type: 'feature', text: 'Implemented global search filtering for Card views in both User and Room management pages.' },
+            { type: 'feature', text: 'Added premium dynamic styling to the Simulation Engine transport controls with ambient glow effects and custom dark mode themes.' },
+            { type: 'fix', text: 'Prevented the DevTool Settings modal from automatically appearing on every page refresh.' },
+            { type: 'fix', text: 'Hidden Demo FAB by default for cleaner production-like presentation.' },
+            { type: 'refactor', text: 'Applied centralized dark-mode ready chart configurations to the Revenue Trend report.' },
+            { type: 'chore', text: 'Added subtle grid background patterns with radial masking to Presentation slides.' }
+        ]
+    },
+    {
+        date: 'June 2, 2026',
+        version: 'v1.0.3',
+        title: 'Settings & DevTools',
+        description: 'Introduced general system settings, room types management, and developer tools.',
+        changes: [
+            { type: 'feature', text: 'Added General Settings page for configuring hotel properties and policies.' },
+            { type: 'feature', text: 'Implemented Room Types Management with dynamic procedural mock data generation.' },
+            { type: 'feature', text: 'Built DevTool component and useDevSettings for streamlined debugging and state management.' },
+            { type: 'chore', text: 'Added backend handover guidelines for future API integration.' }
+        ]
+    },
+    {
+        date: 'June 1, 2026',
+        version: 'v1.0.2',
+        title: 'Administrator Module & Authentication',
+        description: 'Added robust authentication gating, user management, detailed reports, and expanded billing features.',
+        changes: [
+            { type: 'feature', text: 'Built AuthGate component and integrated useDemoAuth for route protection.' },
+            { type: 'feature', text: 'Created Users management page for role-based access control.' },
+            { type: 'feature', text: 'Added Invoices page under the Billing module.' },
+            { type: 'feature', text: 'Built comprehensive Reports page in the Administrator module.' },
+            { type: 'refactor', text: 'Enhanced UserMenu and UserModal components for improved user profile handling.' },
+            { type: 'refactor', text: 'Reorganized core pages (Front Desk, Billing, Housekeeping) for better modularity.' }
+        ]
+    },
+    {
+        date: 'May 25, 2026',
+        version: 'v1.0.1',
         title: 'Full System Completion',
         description: 'Completed all operational modules for the Presidio PMS, including a powerful automated simulation engine to demonstrate system capabilities under load.',
         changes: [
@@ -48,7 +102,7 @@ const changelogs: ChangelogEntry[] = [
     },
     {
         date: 'May 24, 2026',
-        version: 'v0.1.0',
+        version: 'v1.0.0',
         title: 'Core Modules & Dashboard',
         description: 'Full implementation of the hotel operations dashboard, room management module, data stores, and reusable component library.',
         changes: [
@@ -71,7 +125,7 @@ const changelogs: ChangelogEntry[] = [
 
 function getBadgeColor(type: string) {
     switch (type) {
-        case 'feature': return 'primary'
+        case 'feature': return 'success'
         case 'fix': return 'error'
         case 'refactor': return 'warning'
         case 'chore': return 'neutral'
@@ -90,13 +144,13 @@ function getBadgeColor(type: string) {
             <div class="absolute -top-18 right-4">
                 <UColorModeButton color="primary" />
             </div>
-            <UBadge label="System Updates" icon="i-lucide-file-text" variant="subtle" color="primary" size="lg" class="rounded-full px-3 py-1.5 w-fit" />
+            <UBadge label="Changelog" icon="i-lucide-file-text" variant="subtle" color="primary" size="lg" class="rounded-full px-3 py-1.5 w-fit" />
             <div class="flex flex-col gap-3 mt-6">
                 <h1 class="text-3xl sm:text-5xl text-pretty font-bold text-highlighted">
-                    Changelog &amp; <span class="text-primary-600 dark:text-primary-400">Release Notes</span>
+                    System Updates &amp; <span class="text-primary-600 dark:text-primary-400">Release Notes</span>
                 </h1>
                 <p class="text-lg text-pretty text-primary-600 dark:text-primary-700 font-light">
-                    Keep track of all new features, improvements, and architectural updates to the Loan Management Platform.
+                    Keep track of all new features, improvements, and architectural updates to the Presidio PMS.
                 </p>
             </div>
         </UContainer>

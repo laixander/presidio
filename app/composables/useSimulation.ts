@@ -32,13 +32,14 @@ export const useSimulation = () => {
     const roomsStore = useRoomsStore()
     const guestsStore = useGuestsStore()
     const logger = useLogger('simulation')
+    const appLogger = useAppLogger()
 
     const isRunning = computed(() => state.value === 'Running')
 
     const start = () => {
         if (state.value === 'Running') return
         state.value = 'Running'
-        logger.addLog('Simulation Engine Started', 'System', 'info')
+        appLogger.logSimulationEngineStarted()
         timerId.value = setInterval(tick, speedMs.value)
     }
 
@@ -46,20 +47,20 @@ export const useSimulation = () => {
         if (state.value !== 'Running') return
         state.value = 'Paused'
         if (timerId.value) clearInterval(timerId.value)
-        logger.addLog('Simulation Engine Paused', 'System', 'warn')
+        appLogger.logSimulationEnginePaused()
     }
 
     const stop = () => {
         state.value = 'Idle'
         if (timerId.value) clearInterval(timerId.value)
-        logger.addLog('Simulation Engine Stopped', 'System', 'warn')
+        appLogger.logSimulationEngineStopped()
     }
 
     const reset = () => {
         stop()
         tickCount.value = 0
         eventsGenerated.value = 0
-        logger.addLog('Simulation Counters Reset', 'System', 'info')
+        appLogger.logSimulationCountersReset()
     }
 
     const setSpeed = (ms: number) => {
@@ -222,6 +223,7 @@ export const useSimulation = () => {
 
     const step = () => {
         tick()
+        appLogger.logSimulationEngineStepped()
     }
 
     return {

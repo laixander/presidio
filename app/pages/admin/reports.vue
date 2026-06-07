@@ -17,6 +17,14 @@ const foliosStore = useFoliosStore()
 const reservationsStore = useReservationsStore()
 const roomsStore = useRoomsStore()
 const toast = useAppToast()
+const appLogger = useAppLogger()
+const events = useEvents()
+
+const isDrawerOpen = ref(false)
+
+events.on('viewReportsLogs', () => {
+    isDrawerOpen.value = true
+})
 
 const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val)
@@ -25,6 +33,8 @@ const formatCurrency = (val: number) => {
 const totalRevenue = computed(() => foliosStore.totalRevenue)
 const totalBookings = computed(() => reservationsStore.totalBookings)
 const averageOccupancy = computed(() => roomsStore.occupancyRate)
+
+const { defaultOptions, lineDataset, palette } = useChart()
 
 // Dynamic revenue data for the past 7 days
 const chartData = computed(() => {
@@ -57,22 +67,20 @@ const chartData = computed(() => {
     return {
         labels,
         datasets: [
-            {
+            lineDataset({
                 label: 'Revenue (PHP)',
-                backgroundColor: '#E5A100',
-                borderColor: '#E5A100',
+                borderColor: palette.orange.solid,
+                backgroundColor: palette.orange.soft,
                 data
-            }
+            })
         ]
     }
 })
 
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false
-}
+const chartOptions = computed(() => defaultOptions)
 
 const exportReport = (format: string) => {
+    appLogger.logReportExported(format)
     toast.success(`Report Exported`, `The analytics report has been generated in ${format} format.`)
 }
 </script>
@@ -83,12 +91,18 @@ const exportReport = (format: string) => {
     <div v-else class="w-full max-w-(--ui-container) mx-auto space-y-6">
         <UPageCard title="Reports & Analytics"
             description="View revenue trends, booking statistics, and operational performance."
-            variant="naked" orientation="horizontal" />
+            variant="naked" orientation="horizontal">
+            <div class="flex items-center justify-end w-full gap-2">
+                <UButton icon="i-lucide-file-text" color="error" variant="soft" @click="exportReport('PDF')">Export PDF</UButton>
+                <UButton icon="i-lucide-sheet" color="success" variant="soft" @click="exportReport('Excel')">Export Excel</UButton>
+            </div>
+        </UPageCard>
 
         <ClientOnly>
             <Teleport to="#header-actions-teleport">
-                <UButton icon="i-lucide-file-text" color="neutral" variant="soft" @click="exportReport('PDF')">Export PDF</UButton>
-                <UButton icon="i-lucide-sheet" color="neutral" variant="soft" @click="exportReport('Excel')">Export Excel</UButton>
+                <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewReportsLogs')">
+                    Recent Activity
+                </UButton>
             </Teleport>
         </ClientOnly>
 
@@ -138,5 +152,7 @@ const exportReport = (format: string) => {
                 <Line :data="chartData" :options="chartOptions" />
             </div>
         </UCard>
+        
+        <LogsDrawer v-model:open="isDrawerOpen" namespace="reports" />
     </div>
 </template>

@@ -34,10 +34,10 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-const open = ref(true)
+const route = useRoute()
+const open = ref(route.query.dev !== undefined)
 
 // FAB demo (remove in production)
-const route = useRoute()
 const isDevMode = computed(() => {
     if (import.meta.server) return false
     if (route.query.nodev !== undefined) {

@@ -7,6 +7,7 @@ import { UButton, UDropdownMenu, UIcon, UBadge } from '#components'
 import type { StaffUser } from '~/types'
 import UserModal from '~/components/UserModal.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
+import StatusBadge from '~/components/StatusBadge.vue'
 
 definePageMeta({
     title: 'User Management',
@@ -91,14 +92,14 @@ const columns: TableColumn<StaffUser>[] = [
     {
         accessorKey: 'role',
         header: 'Role',
-        cell: ({ row }) => h(UBadge, { color: 'neutral', variant: 'subtle' }, () => row.getValue('role') as string)
+        cell: ({ row }) => h(StatusBadge, { status: row.getValue('role') as string })
     },
     {
         accessorKey: 'isActive',
         header: 'Status',
         cell: ({ row }) => {
             const active = row.getValue('isActive') as boolean
-            return h(UBadge, { color: active ? 'success' : 'error', variant: 'subtle' }, () => active ? 'Active' : 'Inactive')
+            return h(StatusBadge, { status: active ? 'Active' : 'Inactive' })
         }
     },
     {
@@ -121,6 +122,16 @@ const columns: TableColumn<StaffUser>[] = [
 
 const globalFilter = ref('')
 const viewMode = ref<'list' | 'card'>('list')
+
+const filteredUsers = computed(() => {
+    if (!globalFilter.value) return usersStore.users
+    const search = globalFilter.value.toLowerCase()
+    return usersStore.users.filter(user => 
+        user.name.toLowerCase().includes(search) || 
+        user.email.toLowerCase().includes(search) || 
+        user.role.toLowerCase().includes(search)
+    )
+})
 </script>
 
 <template>
@@ -131,7 +142,8 @@ const viewMode = ref<'list' | 'card'>('list')
             description="Manage staff accounts, roles, and system access."
             variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
             <div class="flex justify-end gap-2 flex-1">
-                <UInput v-model="globalFilter" icon="i-lucide-search" placeholder="Search users..." class="w-full sm:w-64" />
+                <TableGlobalFilter v-model="globalFilter" />
+                <!-- <UInput v-model="globalFilter" icon="i-lucide-search" placeholder="Search users..." class="w-full sm:w-64" /> -->
                 <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
                 v-model="viewMode" :content="false" size="xs" />
             </div>
@@ -139,7 +151,7 @@ const viewMode = ref<'list' | 'card'>('list')
 
         <ClientOnly>
             <Teleport to="#header-actions-teleport">
-                <UButton icon="i-lucide-history" color="neutral" variant="ghost" @click="events.emit('viewUserLogs')">Recent Activity</UButton>
+                <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewUserLogs')">Recent Activity</UButton>
                 <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addUser')">Add User</UButton>
             </Teleport>
         </ClientOnly>
@@ -161,7 +173,7 @@ const viewMode = ref<'list' | 'card'>('list')
 
         <!-- Card grid view -->
         <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
-            <Empty v-if="!usersStore.isLoading && !usersStore.users.length"
+            <Empty v-if="!usersStore.isLoading && !filteredUsers.length"
                 title="No users found"
                 description="There are currently no users to display. Add a new user to get started."
                 icon="i-lucide-user-cog">
@@ -172,7 +184,7 @@ const viewMode = ref<'list' | 'card'>('list')
             </Empty>
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                <UCard v-for="user in usersStore.users" :key="user.id" variant="subtle"
+                <UCard v-for="user in filteredUsers" :key="user.id" variant="subtle"
                     class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
                     <template #header>
                         <div class="flex items-start justify-between">
@@ -193,11 +205,11 @@ const viewMode = ref<'list' | 'card'>('list')
                     <div class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
                         <div>
                             <span class="text-muted">Role</span>
-                            <UBadge :label="user.role" color="neutral" variant="subtle" size="sm" />
+                            <StatusBadge :status="user.role" />
                         </div>
                         <div>
                             <span class="text-muted">Status</span>
-                            <UBadge :label="user.isActive ? 'Active' : 'Inactive'" :color="user.isActive ? 'success' : 'error'" variant="subtle" size="sm" />
+                            <StatusBadge :status="user.isActive ? 'Active' : 'Inactive'" />
                         </div>
                     </div>
                 </UCard>

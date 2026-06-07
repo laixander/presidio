@@ -9,7 +9,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  placeholder: 'Search all columns...'
+  placeholder: 'Search...'
 })
 </script>
 

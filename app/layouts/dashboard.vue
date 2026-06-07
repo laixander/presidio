@@ -121,7 +121,7 @@ const headerActions = computed(() => {
         variant === 'inset' && 'bg-neutral-50 dark:bg-neutral-950',
         side === 'right' && 'flex-row-reverse'
     ]">
-        <USidebar v-model:open="open" :variant="variant" :collapsible="collapsible" :side="side" :ui="{ root: '[--sidebar-width-icon:4.5625rem]', container: 'h-full', header: 'px-5' }" close>
+        <USidebar v-model:open="open" :variant="variant" :collapsible="collapsible" :side="side" :ui="{ root: '[--sidebar-width-icon:4.5625rem]', container: 'h-full', header: 'px-5', body: 'scrollbar' }" close>
             <template #header="{ close }">
                 <div class="flex items-end gap-2.5">
                     <UIcon name="i-lucide-hotel" class="size-8 shrink-0 text-primary" />
