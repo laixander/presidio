@@ -170,21 +170,20 @@ const paymentColumns: TableColumn<Payment>[] = [
                         v-if="folio.status === 'Open'"
                         label="Post Charge" 
                         icon="i-lucide-plus" 
-                        color="primary" variant="soft"
+                        variant="soft"
                         @click="showChargeModal = true" 
                     />
                     <UButton 
                         v-if="folio.status === 'Open'"
                         label="Apply Payment" 
                         icon="i-lucide-banknote" 
-                        color="primary" variant="soft"
+                        variant="soft"
                         @click="showPaymentModal = true" 
                     />
                     <UButton 
                         v-if="folio.status === 'Open'"
                         label="Settle Folio" 
-                        icon="i-lucide-check-circle" 
-                        color="primary" 
+                        icon="i-lucide-check-circle"
                         :disabled="folio.balance > 0"
                         @click="handleSettleFolio" 
                     />
@@ -193,7 +192,7 @@ const paymentColumns: TableColumn<Payment>[] = [
                         label="Print Invoice" 
                         icon="i-lucide-printer" 
                         color="neutral" 
-                        variant="outline"
+                        variant="soft"
                     />
                 </Teleport>
             </ClientOnly>

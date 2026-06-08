@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h } from 'vue'
 import { UBadge, UButton } from '#components'
-import type { TableColumn } from '@nuxt/ui'
+import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import type { Folio } from '~/types'
 
 definePageMeta({
@@ -77,17 +77,44 @@ const getTotalPaid = (folioId: number) => {
 const downloadPdf = (folio: Folio) => {
     toast.success('Invoice Generated', `Invoice ${folio.folioNumber} has been generated as a PDF.`)
 }
-</script>
 
+const table = useTemplateRef('table')
+const globalFilter = ref('')
+const columnVisibility = ref({
+    id: false
+})
+const viewMode = ref<'list' | 'card'>('list')
+
+const filteredInvoices = computed(() => {
+    if (!globalFilter.value) return invoiceFolios.value
+    const search = globalFilter.value.toLowerCase()
+    return invoiceFolios.value.filter(folio => {
+        const guestName = getGuestName(folio.guestId)
+        return (
+            folio.folioNumber.toLowerCase().includes(search) ||
+            guestName.toLowerCase().includes(search) ||
+            folio.status.toLowerCase().includes(search)
+        )
+    })
+})
+</script>
 <template>
     <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Billing staff or an Administrator to view Invoices." icon="i-lucide-lock" />
 
     <template v-else>
         <UPageCard title="Invoices & History"
             description="View and download settled folios and billing history."
-            variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6" />
+            variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
+            <div class="flex justify-end gap-2 flex-1">
+                <TableGlobalFilter v-model="globalFilter" />
+                <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
+                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
+                    v-model="viewMode" :content="false" size="xs" />
+            </div>
+        </UPageCard>
 
-        <UTable :data="invoiceFolios" :columns="columns" :loading="foliosStore.isLoading" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 overflow-y-auto scrollbar">
+        <!-- List (table) view -->
+        <UTable v-if="viewMode === 'list'" sticky ref="table" :data="invoiceFolios" :columns="columns" :loading="foliosStore.isLoading" v-model:column-visibility="columnVisibility" v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 overflow-y-auto scrollbar">
             <template #empty>
                 <Empty 
                     :loading="foliosStore.isLoading" 
@@ -97,5 +124,44 @@ const downloadPdf = (folio: Folio) => {
                 />
             </template>
         </UTable>
+
+        <!-- Card grid view -->
+        <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
+            <Empty v-if="!foliosStore.isLoading && !filteredInvoices.length"
+                title="No Invoices Found"
+                description="There are no settled invoices in the system."
+                icon="i-lucide-receipt">
+            </Empty>
+
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <UCard v-for="folio in filteredInvoices" :key="folio.id" variant="subtle"
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    <template #header>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-muted">Invoice #{{ folio.folioNumber }}</p>
+                                <h3 class="text-lg font-bold">{{ getGuestName(folio.guestId) }}</h3>
+                            </div>
+                            <UButton icon="i-lucide-download" color="neutral" variant="ghost" size="sm" @click="downloadPdf(folio)" />
+                        </div>
+                    </template>
+
+                    <div class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
+                        <div>
+                            <span class="text-muted">Status</span>
+                            <UBadge class="mt-1" :color="folio.status === 'Settled' ? 'success' : 'neutral'" variant="subtle" size="sm">
+                                {{ folio.status }}
+                            </UBadge>
+                        </div>
+                        <div>
+                            <span class="text-muted">Total Paid</span>
+                            <span class="font-medium text-neutral-900 dark:text-white">
+                                {{ formatCurrency(getTotalPaid(folio.id)) }}
+                            </span>
+                        </div>
+                    </div>
+                </UCard>
+            </div>
+        </div>
     </template>
 </template>
