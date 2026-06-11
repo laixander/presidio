@@ -31,14 +31,14 @@ definePageMeta({
 const roomsStore = useRoomsStore()
 const events = useEvents()
 const overlay = useOverlay()
-const logger  = useLogger('rooms')
-const toast   = useAppToast()
+const logger = useLogger('rooms')
+const toast = useAppToast()
 
-const roomModal    = overlay.create(RoomModal)
+const roomModal = overlay.create(RoomModal)
 const confirmModal = overlay.create(ConfirmationModal)
 
 const isAddRoomOpen = ref(false)
-const isDrawerOpen  = ref(false)
+const isDrawerOpen = ref(false)
 
 // ============================================================================
 // Event Listeners
@@ -233,106 +233,109 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
 </script>
 
 <template>
-    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be an Administrator to access Room Management." icon="i-lucide-lock" />
+    <AuthGate v-if="!isAuthorized" title="Access Denied"
+        description="You must be an Administrator to access Room Management." icon="i-lucide-lock" />
 
     <template v-else>
-    <UPageCard title="Room Management"
-        description="Manage hotel room inventory, status, and pricing."
-        variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
-        <div class="flex justify-end gap-2 flex-1">
-            <TableGlobalFilter v-model="globalFilter" />
-            <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
-            <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
-                v-model="viewMode" :content="false" size="xs" />
-        </div>
-    </UPageCard>
+        <UPageCard title="Room Management" description="Manage hotel room inventory, status, and pricing."
+            variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
+            <div class="flex justify-end gap-2 flex-1">
+                <TableGlobalFilter v-model="globalFilter" />
+                <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
+                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
+                    v-model="viewMode" :content="false" size="xs" />
+            </div>
+        </UPageCard>
 
-    <ClientOnly>
-        <Teleport to="#header-actions-teleport">
-            <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewRoomLogs')">Recent Activity</UButton>
-            <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addRoom')">Add Room</UButton>
-        </Teleport>
-    </ClientOnly>
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-history" color="neutral" variant="soft" @click="events.emit('viewRoomLogs')">
+                    Recent Activity</UButton>
+                <UButton icon="i-lucide-plus" color="primary" @click="events.emit('addRoom')">Add Room</UButton>
+            </Teleport>
+        </ClientOnly>
 
-    <!-- List (table) view -->
-    <UTable v-if="viewMode === 'list'" sticky ref="table" :data="roomsStore.rooms" :columns="columns"
-        :loading="roomsStore.isLoading" v-model:column-visibility="columnVisibility"
-        v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
-        <template #empty>
-            <Empty :loading="roomsStore.isLoading" title="No rooms found"
+        <!-- List (table) view -->
+        <UTable v-if="viewMode === 'list'" sticky ref="table" :data="roomsStore.rooms" :columns="columns"
+            :loading="roomsStore.isLoading" v-model:column-visibility="columnVisibility"
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            <template #empty>
+                <Empty :loading="roomsStore.isLoading" title="No rooms found"
+                    description="There are currently no rooms to display. Add a new room to get started."
+                    icon="i-lucide-bed-double" loading-title="Loading Rooms"
+                    loading-description="Please wait while we fetch your room inventory.">
+                    <template #action>
+                        <UButton label="Add First Room" icon="i-lucide-plus" color="primary" size="lg"
+                            @click="events.emit('addRoom')" />
+                    </template>
+                </Empty>
+            </template>
+        </UTable>
+
+        <!-- Card grid view -->
+        <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
+            <Empty v-if="!roomsStore.isLoading && !filteredRooms.length" title="No rooms found"
                 description="There are currently no rooms to display. Add a new room to get started."
-                icon="i-lucide-bed-double" loading-title="Loading Rooms"
-                loading-description="Please wait while we fetch your room inventory.">
+                icon="i-lucide-bed-double">
                 <template #action>
                     <UButton label="Add First Room" icon="i-lucide-plus" color="primary" size="lg"
                         @click="events.emit('addRoom')" />
                 </template>
             </Empty>
-        </template>
-    </UTable>
 
-    <!-- Card grid view -->
-    <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
-        <Empty v-if="!roomsStore.isLoading && !filteredRooms.length"
-            title="No rooms found"
-            description="There are currently no rooms to display. Add a new room to get started."
-            icon="i-lucide-bed-double">
-            <template #action>
-                <UButton label="Add First Room" icon="i-lucide-plus" color="primary" size="lg"
-                    @click="events.emit('addRoom')" />
-            </template>
-        </Empty>
-
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <UCard v-for="room in filteredRooms" :key="room.id" variant="subtle"
-                class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
-                <template #header>
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="text-xs text-muted">Floor {{ room.floor }}</p>
-                            <h3 class="text-lg font-bold">Room {{ room.number }}</h3>
-                            <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <UCard v-for="room in filteredRooms" :key="room.id" variant="subtle"
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    <template #header>
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-xs text-muted">Floor {{ room.floor }}</p>
+                                <h3 class="text-lg font-bold">Room {{ room.number }}</h3>
+                                <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
+                            </div>
+                            <UDropdownMenu :items="[[
+                                { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditRoom(room) }
+                            ], [
+                                { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteRoom(room) }
+                            ]]" :content="{ align: 'end' }" size="sm">
+                                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
+                            </UDropdownMenu>
                         </div>
-                        <UDropdownMenu :items="[[
-                            { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditRoom(room) }
-                        ], [
-                            { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteRoom(room) }
-                        ]]" :content="{ align: 'end' }" size="sm">
-                            <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
-                        </UDropdownMenu>
-                    </div>
-                </template>
+                    </template>
 
-                <div class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
-                    <div>
-                        <span class="text-muted">Rate / Night</span>
-                        <span :class="room.rateOverride !== null ? 'text-primary font-semibold' : ''">
-                            ₱{{ roomsStore.getEffectiveRate(room).toLocaleString() }}{{ room.rateOverride !== null ? ' ★' : '' }}
-                        </span>
+                    <div
+                        class="*:py-2 *:first:pt-0 *:last:pb-0 *:flex *:items-center *:justify-between text-sm divide-y divide-default">
+                        <div>
+                            <span class="text-muted">Rate / Night</span>
+                            <span :class="room.rateOverride !== null ? 'text-primary font-semibold' : ''">
+                                ₱{{ roomsStore.getEffectiveRate(room).toLocaleString() }}{{ room.rateOverride !== null ?
+                                ' ★' :
+                                '' }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Occupancy</span>
+                            <StatusBadge :status="room.occupancyStatus" />
+                        </div>
+                        <div>
+                            <span class="text-muted">Clean Status</span>
+                            <StatusBadge :status="room.cleanStatus" />
+                        </div>
+                        <div>
+                            <span class="text-muted">Condition</span>
+                            <StatusBadge v-if="room.condition !== 'Normal'" :status="room.condition" />
+                            <span v-else class="text-default">Normal</span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="text-muted">Occupancy</span>
-                        <StatusBadge :status="room.occupancyStatus" />
-                    </div>
-                    <div>
-                        <span class="text-muted">Clean Status</span>
-                        <StatusBadge :status="room.cleanStatus" />
-                    </div>
-                    <div>
-                        <span class="text-muted">Condition</span>
-                        <StatusBadge v-if="room.condition !== 'Normal'" :status="room.condition" />
-                        <span v-else class="text-default">Normal</span>
-                    </div>
-                </div>
-            </UCard>
+                </UCard>
+            </div>
         </div>
-    </div>
 
-    <RoomModal v-model:open="isAddRoomOpen" @submit="handleAddRoom" />
+        <RoomModal v-model:open="isAddRoomOpen" @submit="handleAddRoom" />
 
-    <!-- ================================================================ -->
-    <!-- Logs Drawer                                                       -->
-    <!-- ================================================================ -->
-    <LogsDrawer v-model:open="isDrawerOpen" namespace="rooms" />
+        <!-- ================================================================ -->
+        <!-- Logs Drawer                                                       -->
+        <!-- ================================================================ -->
+        <LogsDrawer v-model:open="isDrawerOpen" namespace="rooms" />
     </template>
 </template>
