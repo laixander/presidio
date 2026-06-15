@@ -18,6 +18,7 @@ export const useDemoSeeder = () => {
     const foliosStore = useFoliosStore()
     const housekeepingStore = useHousekeepingStore()
     const settingsStore = useSettingsStore()
+    const groupsStore = useGroupsStore()
 
     /**
      * Procedurally generate and seed all stores with mock data.
@@ -177,6 +178,41 @@ export const useDemoSeeder = () => {
             }
         })
 
+        // 7. Group Bookings & Room Blocks
+        const groupCount = Math.max(1, Math.floor(count / 4))
+        let blockId = 1
+        const generatedGroups = Array.from({ length: groupCount }, (_, i) => {
+            const guest = faker.helpers.arrayElement(generatedGuests)
+            const checkInDate = faker.date.recent({ days: 5 })
+            const checkOutDate = faker.date.soon({ days: 10, refDate: checkInDate })
+            return {
+                id: i + 1,
+                groupName: `${faker.company.name()} Group`,
+                contactGuestId: guest.id,
+                contactPerson: `${guest.firstName} ${guest.lastName}`,
+                contactNumber: guest.phone,
+                totalGuests: faker.number.int({ min: 5, max: 30 }),
+                checkInDate: checkInDate.toISOString().split('T')[0],
+                checkOutDate: checkOutDate.toISOString().split('T')[0],
+                status: faker.helpers.arrayElement(reservationStatuses)
+            }
+        })
+        
+        const generatedBlocks: any[] = []
+        generatedGroups.forEach(group => {
+            const numBlocks = faker.number.int({ min: 1, max: 5 })
+            for (let b = 0; b < numBlocks; b++) {
+                const room = faker.helpers.arrayElement(generatedRooms)
+                generatedBlocks.push({
+                    id: blockId++,
+                    groupId: group.id,
+                    roomId: room.id,
+                    reservationId: null,
+                    status: faker.helpers.arrayElement(['Blocked', 'Reserved', 'Released'])
+                })
+            }
+        })
+
         // Apply generated data to Pinia stores
         usersStore.seed(generatedStaffUsers as any[])
         roomsStore.seed(generatedRooms as any[], generatedRoomTypes as any[])
@@ -184,6 +220,7 @@ export const useDemoSeeder = () => {
         reservationsStore.seed(generatedReservations as any[])
         foliosStore.seed(generatedFolios as any[], generatedCharges as any[], generatedPayments as any[])
         housekeepingStore.seed(generatedTasks as any[])
+        groupsStore.seed(generatedGroups as any[], generatedBlocks as any[])
     }
 
     const resetAll = async () => {
@@ -195,6 +232,7 @@ export const useDemoSeeder = () => {
         foliosStore.clear()
         housekeepingStore.clear()
         settingsStore.clear()
+        groupsStore.clear()
     }
 
     return {

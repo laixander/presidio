@@ -13,53 +13,22 @@ const STORAGE_KEY = 'presidio-auth-role'
 const STORAGE_PAGES_KEY = 'presidio-auth-pages'
 
 export const useDemoAuth = () => {
-    // Default to null — user must select a role on the login page
-    const currentRole = useState<SystemRole | null>('presidio-auth-role', () => null)
-    const showAllPages = useState<boolean>('presidio-auth-pages', () => false)
-    const isHydrated = ref(false)
-
-    const load = () => {
-        if (import.meta.server) return
-        const storedRole = localStorage.getItem(STORAGE_KEY) as SystemRole | null
-        if (storedRole) {
-            currentRole.value = storedRole
-        }
-        
-        const storedPages = localStorage.getItem(STORAGE_PAGES_KEY)
-        if (storedPages !== null) {
-            showAllPages.value = storedPages === 'true'
-        }
-
-        isHydrated.value = true
-    }
-
-    // Eagerly load from localStorage on the client.
-    // This must NOT use onMounted because the composable is also
-    // called from route middleware (no active component instance).
-    if (import.meta.client && !isHydrated.value) {
-        // load()
-        onMounted(load)
-    }
+    // Use cookies instead of localStorage so the server has access to auth state
+    // during initial SSR render. This prevents flickering and unwanted redirects.
+    const currentRole = useCookie<SystemRole | null>(STORAGE_KEY, { default: () => null })
+    const showAllPages = useCookie<boolean>(STORAGE_PAGES_KEY, { default: () => false })
+    const isHydrated = ref(true)
 
     const setRole = (role: SystemRole) => {
         currentRole.value = role
-        if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY, role)
-        }
     }
 
     const logout = () => {
         currentRole.value = null
-        if (import.meta.client) {
-            localStorage.removeItem(STORAGE_KEY)
-        }
     }
 
     const setShowAllPages = (show: boolean) => {
         showAllPages.value = show
-        if (import.meta.client) {
-            localStorage.setItem(STORAGE_PAGES_KEY, String(show))
-        }
     }
 
     const isLoggedIn = computed(() => currentRole.value !== null)

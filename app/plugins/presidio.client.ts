@@ -12,4 +12,5 @@ export default defineNuxtPlugin(() => {
     useFoliosStore().hydrate()
     useHousekeepingStore().hydrate()
     useSettingsStore().hydrate()
+    useGroupsStore().hydrate()
 })

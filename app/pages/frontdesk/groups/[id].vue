@@ -63,8 +63,8 @@ const nights = computed(() => {
 // Tabs & State
 // ============================================================================
 const items = [
-    { label: 'Room Blocks', value: 'blocks', icon: 'i-lucide-layout-grid' },
-    { label: 'Reservations', value: 'reservations', icon: 'i-lucide-calendar-check' }
+    { label: 'Room Blocks', value: 'blocks', slot: 'blocks', icon: 'i-lucide-layout-grid' },
+    { label: 'Reservations', value: 'reservations', slot: 'reservations', icon: 'i-lucide-calendar-check' }
 ]
 
 const selectedTab = ref('blocks')
@@ -246,9 +246,8 @@ const assignGuest = (reservationId: number, guestId: number) => {
                 <UTabs :items="items" v-model="selectedTab" class="w-full">
 
                     <!-- Blocks Tab -->
-                    <template #item="{ item }">
-                        <div v-if="item.value === 'blocks'" class="p-4 space-y-6">
-
+                    <template #blocks>
+                        <div class="p-4 space-y-6">
                             <!-- Add Block Control -->
                             <div
                                 class="flex flex-col sm:flex-row gap-4 items-end bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-default">
@@ -270,7 +269,6 @@ const assignGuest = (reservationId: number, guestId: number) => {
                                         :disabled="blocks.filter(b => b.status === 'Blocked').length === 0"
                                         @click="reserveBlocks" />
                                 </div>
-
                                 <UTable :data="blocks" :columns="blockColumns" class="border border-default rounded-md">
                                     <template #empty>
                                         <div class="p-8 text-center text-muted">
@@ -280,9 +278,11 @@ const assignGuest = (reservationId: number, guestId: number) => {
                                 </UTable>
                             </div>
                         </div>
+                    </template>
 
-                        <!-- Reservations Tab -->
-                        <div v-else-if="item.value === 'reservations'" class="p-4">
+                    <!-- Reservations Tab -->
+                    <template #reservations>
+                        <div class="p-4">
                             <div v-if="groupReservations.length === 0"
                                 class="p-12 text-center text-muted border border-default rounded-md bg-neutral-50 dark:bg-neutral-900">
                                 <UIcon name="i-lucide-calendar-x" class="size-12 mb-4 text-neutral-400 mx-auto" />
@@ -297,7 +297,7 @@ const assignGuest = (reservationId: number, guestId: number) => {
                                     <div class="flex items-center gap-4">
                                         <div
                                             class="size-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold font-mono">
-                                            {{roomsStore.rooms.find(r => r.id === res.roomId)?.number || '?'}}
+                                            {{ roomsStore.rooms.find(r => r.id === res.roomId)?.number || '?' }}
                                         </div>
                                         <div>
                                             <div class="font-mono text-sm font-bold">{{ res.bookingRef }}</div>
@@ -313,8 +313,8 @@ const assignGuest = (reservationId: number, guestId: number) => {
                                                 class="flex items-center gap-3 border border-default p-2 rounded-md bg-white dark:bg-neutral-950">
                                                 <GuestAvatar :guest="guestsStore.getById(res.guestId)!" size="sm" />
                                                 <div class="flex-1 min-w-0">
-                                                    <p class="text-sm font-semibold truncate">{{
-                                                        guestsStore.getFullName(guestsStore.getById(res.guestId)!) }}
+                                                    <p class="text-sm font-semibold truncate">
+                                                        {{ guestsStore.getFullName(guestsStore.getById(res.guestId)!) }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -339,6 +339,7 @@ const assignGuest = (reservationId: number, guestId: number) => {
                             </div>
                         </div>
                     </template>
+
                 </UTabs>
             </UCard>
         </div>

@@ -129,6 +129,12 @@ export const useGroupsStore = defineStore('groups', () => {
         persist()
     }
 
+    const seed = (initialGroups: any[], initialBlocks: any[]) => {
+        groups.value = initialGroups
+        blocks.value = initialBlocks
+        persist()
+    }
+
     const clear = () => {
         groups.value = []
         blocks.value = []
@@ -144,6 +150,6 @@ export const useGroupsStore = defineStore('groups', () => {
         // Getters
         getGroupById, getBlocksForGroup, totalGroups,
         // Actions
-        hydrate, addGroup, updateGroup, deleteGroup, addRoomBlock, removeRoomBlock, reserveBlockedRooms, clear
+        hydrate, addGroup, updateGroup, deleteGroup, addRoomBlock, removeRoomBlock, reserveBlockedRooms, seed, clear
     }
 })
