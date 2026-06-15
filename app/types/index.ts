@@ -114,12 +114,39 @@ export type ReservationStatus = 'Pending' | 'Confirmed' | 'In-House' | 'Done' | 
 export type BookingSource = 'Walk-in' | 'Phone' | 'OTA' | 'Corporate'
 
 /**
+ * Represents a group reservation (e.g. corporate bookings, weddings).
+ */
+export interface GroupReservation {
+  id: number
+  groupName: string
+  contactGuestId?: number
+  contactPerson?: string
+  contactNumber?: string
+  totalGuests: number
+  checkInDate: string
+  checkOutDate: string
+  status: ReservationStatus
+}
+
+/**
+ * Represents a block of rooms allocated to a group.
+ */
+export interface RoomBlock {
+  id: number
+  groupId: number
+  roomId: number
+  reservationId: number | null
+  status: 'Blocked' | 'Reserved' | 'Released'
+}
+
+/**
  * Represents a guest reservation / booking.
  */
 export interface Reservation {
   id: number
   bookingRef: string
-  guestId: number
+  guestId: number | null
+  groupId?: number
   roomTypeId: number
   roomId: number | null
   checkInDate: string

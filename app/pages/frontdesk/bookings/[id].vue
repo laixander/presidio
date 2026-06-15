@@ -30,7 +30,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
 const resId = computed(() => parseInt(route.params.id as string, 10))
 const reservation = computed(() => reservationsStore.getById(resId.value))
 
-const guest = computed(() => reservation.value ? guestsStore.getById(reservation.value.guestId) : undefined)
+const guest = computed(() => reservation.value && reservation.value.guestId ? guestsStore.getById(reservation.value.guestId) : undefined)
 const roomType = computed(() => reservation.value ? roomsStore.roomTypes.find(rt => rt.id === reservation.value?.roomTypeId) : undefined)
 const room = computed(() => reservation.value?.roomId ? roomsStore.rooms.find(r => r.id === reservation.value?.roomId) : undefined)
 const folio = computed(() => foliosStore.folios.find(f => f.reservationId === resId.value))
@@ -113,6 +113,9 @@ const nights = computed(() => {
                                 <UBadge v-if="guest.company" color="neutral" variant="subtle" icon="i-lucide-building">{{ guest.company }}</UBadge>
                             </div>
                         </div>
+                    </div>
+                    <div v-else class="text-muted italic flex items-center justify-center p-4">
+                        Guest unassigned
                     </div>
                 </UCard>
 

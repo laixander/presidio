@@ -57,8 +57,8 @@ const columns: TableColumn<Reservation>[] = [
         id: 'guest',
         header: 'Guest',
         cell: ({ row }) => {
-            const guest = guestsStore.getById(row.original.guestId)
-            return guest ? h(GuestAvatar, { guest, size: 'sm', showDetails: true }) : h('span', { class: 'text-muted italic' }, 'Unknown')
+            const guest = row.original.guestId ? guestsStore.getById(row.original.guestId) : undefined
+            return guest ? h(GuestAvatar, { guest, size: 'sm', showDetails: true }) : h('span', { class: 'text-muted italic' }, row.original.groupId ? 'Group (Unassigned)' : 'Unknown')
         }
     },
     {
@@ -149,7 +149,7 @@ const filteredReservations = computed(() => {
     if (!globalFilter.value) return reservationsStore.reservations
     const q = globalFilter.value.toLowerCase()
     return reservationsStore.reservations.filter(res => {
-        const guest = guestsStore.getById(res.guestId)
+        const guest = res.guestId ? guestsStore.getById(res.guestId) : undefined
         const guestName = guest ? `${guest.firstName} ${guest.lastName}`.toLowerCase() : ''
         return res.bookingRef.toLowerCase().includes(q) || guestName.includes(q)
     })
@@ -240,9 +240,12 @@ const getRoomNumber = (roomId: number | null | undefined) => {
                     <div class="space-y-4">
                         <!-- Guest Info -->
                         <div class="flex items-center gap-3">
-                            <GuestAvatar v-if="guestsStore.getById(res.guestId)" :guest="guestsStore.getById(res.guestId)!" size="sm" />
+                            <GuestAvatar v-if="res.guestId && guestsStore.getById(res.guestId)" :guest="guestsStore.getById(res.guestId)!" size="sm" />
+                            <div v-else class="size-8 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                                <UIcon name="i-lucide-users" class="size-4 text-neutral-500" />
+                            </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold truncate">{{ guestsStore.getById(res.guestId) ? guestsStore.getFullName(guestsStore.getById(res.guestId)!) : 'Unknown Guest' }}</p>
+                                <p class="text-sm font-semibold truncate">{{ res.guestId && guestsStore.getById(res.guestId) ? guestsStore.getFullName(guestsStore.getById(res.guestId)!) : (res.groupId ? 'Group Reservation' : 'Unknown Guest') }}</p>
                             </div>
                         </div>
 
