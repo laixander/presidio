@@ -9,8 +9,9 @@ import { computed, ref, h } from 'vue'
 import { UBadge, UButton, USelect } from '#components'
 import StatusBadge from '~/components/StatusBadge.vue'
 import GuestAvatar from '~/components/GuestAvatar.vue'
+import GroupModal from '~/components/GroupModal.vue'
 import type { TableColumn } from '@nuxt/ui'
-import type { RoomBlock, Reservation } from '~/types'
+import type { RoomBlock, Reservation, GroupReservation } from '~/types'
 
 definePageMeta({
     title: 'Group Booking Details',
@@ -25,6 +26,13 @@ const guestsStore = useGuestsStore()
 const roomsStore = useRoomsStore()
 const reservationsStore = useReservationsStore()
 const toast = useAppToast()
+
+const isEditModalOpen = ref(false)
+function onEditSubmit(data: Partial<GroupReservation>) {
+    if (!group.value) return
+    groupsStore.updateGroup(group.value.id, data)
+    toast.success('Group Updated', 'The group details have been updated successfully.')
+}
 
 const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value ?? ''))
 
@@ -164,6 +172,11 @@ const assignGuest = (reservationId: number, guestId: number) => {
     toast.success('Guest Assigned', 'The guest has been successfully assigned to the reservation.')
 }
 
+const unassignGuest = (reservationId: number) => {
+    reservationsStore.updateReservation(reservationId, { guestId: null })
+    toast.success('Guest Removed', 'The guest has been removed from the reservation.')
+}
+
 </script>
 
 <template>
@@ -172,7 +185,7 @@ const assignGuest = (reservationId: number, guestId: number) => {
         icon="i-lucide-lock" />
 
     <template v-else>
-        <div v-if="group" class="space-y-6 max-w-5xl mx-auto">
+        <div v-if="group" class="space-y-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center gap-4">
@@ -186,118 +199,119 @@ const assignGuest = (reservationId: number, guestId: number) => {
                         <p class="text-muted text-sm mt-1">Group Booking Details</p>
                     </div>
                 </div>
+                <div class="flex items-center gap-2">
+                    <UButton label="Edit Details" icon="i-lucide-pencil" color="neutral" variant="soft" @click="isEditModalOpen = true" />
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Contact Info -->
-                <UCard variant="subtle" class="shadow-sm">
-                    <template #header>
-                        <div class="flex items-center gap-2 font-semibold text-lg">
-                            <UIcon name="i-lucide-user" class="text-primary size-5" />
-                            Contact Information
-                        </div>
-                    </template>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-muted text-sm">Contact Name</span>
-                            <span class="font-medium">{{ contactName }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-muted text-sm">Contact Number</span>
-                            <span class="font-medium">{{ contactNumber }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-muted text-sm">Total Guests Expected</span>
-                            <span class="font-medium">{{ group.totalGuests }}</span>
-                        </div>
-                    </div>
-                </UCard>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                <!-- Stay Info -->
-                <UCard variant="subtle" class="shadow-sm">
-                    <template #header>
-                        <div class="flex items-center gap-2 font-semibold text-lg">
-                            <UIcon name="i-lucide-calendar" class="text-primary size-5" />
-                            Stay Details
-                        </div>
-                    </template>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <div class="text-sm text-muted mb-1">Check-In</div>
-                                <div class="font-medium">{{ formatDate(group.checkInDate) }}</div>
+                <div class="flex flex-col gap-6">
+                    <!-- Contact Info -->
+                    <UCard variant="subtle" class="shadow-sm">
+                        <template #header>
+                            <div class="flex items-center gap-2 font-semibold text-lg">
+                                <UIcon name="i-lucide-user" class="text-primary size-5" />
+                                Contact Information
                             </div>
-                            <div>
-                                <div class="text-sm text-muted mb-1">Check-Out</div>
-                                <div class="font-medium">{{ formatDate(group.checkOutDate) }}</div>
+                        </template>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-muted text-sm">Contact Name</span>
+                                <span class="font-medium">{{ contactName }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted text-sm">Contact Number</span>
+                                <span class="font-medium">{{ contactNumber }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted text-sm">Total Guests Expected</span>
+                                <span class="font-medium">{{ group.totalGuests }}</span>
                             </div>
                         </div>
+                    </UCard>
 
-                        <div class="pt-4 border-t border-default">
-                            <div class="text-sm text-muted mb-1">Duration</div>
-                            <div class="font-medium">{{ nights }} Night{{ nights > 1 ? 's' : '' }}</div>
-                        </div>
-                    </div>
-                </UCard>
-            </div>
-
-            <!-- Management Tabs -->
-            <UCard variant="subtle" class="shadow-sm">
-                <UTabs :items="items" v-model="selectedTab" class="w-full">
-
-                    <!-- Blocks Tab -->
-                    <template #blocks>
-                        <div class="p-4 space-y-6">
-                            <!-- Add Block Control -->
-                            <div
-                                class="flex flex-col sm:flex-row gap-4 items-end bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-default">
-                                <div class="flex-1">
-                                    <label class="block text-sm font-medium mb-1">Add Room to Block</label>
-                                    <USelect v-model.number="selectedRoomToAdd" :items="availableRoomOptions"
-                                        placeholder="Select a room..." class="w-full" />
+                    <!-- Stay Info -->
+                    <UCard variant="subtle" class="shadow-sm">
+                        <template #header>
+                            <div class="flex items-center gap-2 font-semibold text-lg">
+                                <UIcon name="i-lucide-calendar" class="text-primary size-5" />
+                                Stay Details
+                            </div>
+                        </template>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-sm text-muted mb-1">Check-In</div>
+                                    <div class="font-medium">{{ formatDate(group.checkInDate) }}</div>
                                 </div>
-                                <UButton label="Block Room" icon="i-lucide-plus" color="primary"
-                                    :disabled="!selectedRoomToAdd" @click="addBlock" />
+                                <div>
+                                    <div class="text-sm text-muted mb-1">Check-Out</div>
+                                    <div class="font-medium">{{ formatDate(group.checkOutDate) }}</div>
+                                </div>
                             </div>
 
-                            <!-- Blocks Table -->
-                            <div>
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg font-medium">Current Room Blocks</h3>
-                                    <UButton label="Reserve All Blocked Rooms" icon="i-lucide-calendar-check"
-                                        color="success"
-                                        :disabled="blocks.filter(b => b.status === 'Blocked').length === 0"
-                                        @click="reserveBlocks" />
-                                </div>
-                                <UTable :data="blocks" :columns="blockColumns" class="border border-default rounded-md">
-                                    <template #empty>
-                                        <div class="p-8 text-center text-muted">
-                                            No rooms blocked yet. Select a room above to add it to the block.
+                            <div class="pt-4 border-t border-default">
+                                <div class="text-sm text-muted mb-1">Duration</div>
+                                <div class="font-medium">{{ nights }} Night{{ nights > 1 ? 's' : '' }}</div>
+                            </div>
+                        </div>
+                    </UCard>
+                </div>
+
+                <!-- Management Tabs -->
+                <UCard variant="subtle" class="shadow-sm md:col-span-2">
+                    <UTabs :items="items" v-model="selectedTab" class="w-full" :ui="{ root: 'sm:gap-4' }">
+
+                        <!-- Blocks Tab -->
+                        <template #blocks>
+                            <div class="space-y-6">
+                                <!-- Add Block Control -->
+                                <UCard class="shadow-sm" :ui="{ body: 'sm:p-4' }">
+                                    <UFormField label="Available Rooms">
+                                        <div class="flex gap-2">
+                                            <USelect v-model.number="selectedRoomToAdd" :items="availableRoomOptions"
+                                                placeholder="Select a room..." class="w-full" />
+                                            <UButton label="Block Room" icon="i-lucide-plus" color="primary"
+                                                :disabled="!selectedRoomToAdd" @click="addBlock" />
                                         </div>
-                                    </template>
-                                </UTable>
-                            </div>
-                        </div>
-                    </template>
+                                    </UFormField>
+                                </UCard>
 
-                    <!-- Reservations Tab -->
-                    <template #reservations>
-                        <div class="p-4">
-                            <div v-if="groupReservations.length === 0"
-                                class="p-12 text-center text-muted border border-default rounded-md bg-neutral-50 dark:bg-neutral-900">
-                                <UIcon name="i-lucide-calendar-x" class="size-12 mb-4 text-neutral-400 mx-auto" />
-                                <p class="text-lg">No reservations generated yet.</p>
-                                <p class="text-sm mt-1">Go to the Room Blocks tab to block rooms and convert them into
-                                    reservations.</p>
+                                <!-- Blocks Table -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="font-semibold">Current Room Blocks</h3>
+                                        <UButton label="Reserve All Blocked Rooms" icon="i-lucide-calendar-check"
+                                            color="success"
+                                            :disabled="blocks.filter(b => b.status === 'Blocked').length === 0"
+                                            @click="reserveBlocks" />
+                                    </div>
+                                    <UTable :data="blocks" :columns="blockColumns"
+                                        class="ring ring-default rounded-md bg-default shadow-sm">
+                                        <template #empty>
+                                            <Empty title="No rooms blocked yet."
+                                                description="Select a room above to add it to the block."
+                                                icon="i-lucide-bed" />
+                                        </template>
+                                    </UTable>
+                                </div>
                             </div>
+                        </template>
+
+                        <!-- Reservations Tab -->
+                        <template #reservations>
+                            <Empty v-if="groupReservations.length === 0" title="No reservations generated yet."
+                                description="Go to the Room Blocks tab to block rooms and convert them into reservations."
+                                icon="i-lucide-calendar-x" />
 
                             <div v-else class="space-y-4">
-                                <div v-for="res in groupReservations" :key="res.id"
-                                    class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center p-4 border border-default rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
+                                <UCard v-for="res in groupReservations" :key="res.id"
+                                    :ui="{ body: 'sm:p-4 flex justify-between items-center' }" class="shadow-sm">
                                     <div class="flex items-center gap-4">
                                         <div
                                             class="size-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold font-mono">
-                                            {{ roomsStore.rooms.find(r => r.id === res.roomId)?.number || '?' }}
+                                            {{roomsStore.rooms.find(r => r.id === res.roomId)?.number || '?'}}
                                         </div>
                                         <div>
                                             <div class="font-mono text-sm font-bold">{{ res.bookingRef }}</div>
@@ -314,9 +328,14 @@ const assignGuest = (reservationId: number, guestId: number) => {
                                                 <GuestAvatar :guest="guestsStore.getById(res.guestId)!" size="sm" />
                                                 <div class="flex-1 min-w-0">
                                                     <p class="text-sm font-semibold truncate">
-                                                        {{ guestsStore.getFullName(guestsStore.getById(res.guestId)!) }}
+                                                        {{
+                                                            guestsStore.getFullName(guestsStore.getById(res.guestId)!)
+                                                        }}
                                                     </p>
                                                 </div>
+                                                <UTooltip text="Remove Guest" v-if="res.status !== 'In-House' && res.status !== 'Done' && res.status !== 'Cancelled'">
+                                                    <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="unassignGuest(res.id)" class="shrink-0" />
+                                                </UTooltip>
                                             </div>
                                         </template>
                                         <template v-else>
@@ -331,24 +350,26 @@ const assignGuest = (reservationId: number, guestId: number) => {
                                             @click="router.push(`/frontdesk/bookings/${res.id}`)"
                                             class="flex-1 sm:flex-none" />
                                         <UButton v-if="res.status === 'Pending' || res.status === 'Confirmed'"
-                                            label="Check-In" icon="i-lucide-log-in" color="primary"
+                                            label="Check-In" icon="i-lucide-log-in"
                                             @click="router.push(`/frontdesk/checkin?id=${res.id}`)"
                                             class="flex-1 sm:flex-none" />
                                     </div>
-                                </div>
+                                </UCard>
                             </div>
-                        </div>
-                    </template>
+                        </template>
 
-                </UTabs>
-            </UCard>
+                    </UTabs>
+                </UCard>
+            </div>
         </div>
 
-        <div v-else class="flex flex-col items-center justify-center py-20">
-            <UIcon name="i-lucide-file-question" class="size-16 text-neutral-300 mb-4" />
-            <h2 class="text-xl font-bold">Group Not Found</h2>
-            <p class="text-muted mt-2 mb-6">The requested group booking could not be found.</p>
-            <UButton label="Return to Groups" color="primary" @click="router.push('/frontdesk/groups')" />
-        </div>
+        <Empty v-else title="Group Not Found" description="The requested group booking could not be found."
+            icon="i-lucide-file-question">
+            <template #action>
+                <UButton label="Return to Groups" color="primary" @click="router.push('/frontdesk/groups')" />
+            </template>
+        </Empty>
+
+        <GroupModal v-if="group" v-model:open="isEditModalOpen" :group="group" @submit="onEditSubmit" />
     </template>
 </template>

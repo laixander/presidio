@@ -32,6 +32,19 @@ interface ChangelogEntry {
 
 const changelogs: ChangelogEntry[] = [
     {
+        date: 'June 16, 2026',
+        version: 'v1.0.6',
+        title: 'Group Booking Management & UX Enhancements',
+        description: 'Introduced robust group booking management capabilities, including view toggles, cancelation workflows, and dynamic guest assignments.',
+        changes: [
+            { type: 'feature', text: 'Added a reusable GroupModal component for seamless editing of group details without context switching.' },
+            { type: 'feature', text: 'Implemented a Card Grid view alongside the Table view for the Group Bookings directory, complete with search filtering.' },
+            { type: 'feature', text: 'Introduced a safe Cancel Group workflow that automatically releases pending room blocks.' },
+            { type: 'feature', text: 'Added dynamic guest unassignment on pending reservations, enabling quick room re-assignment.' },
+            { type: 'refactor', text: 'Updated Group Details page UI to support intuitive micro-interactions and better visual hierarchy.' }
+        ]
+    },
+    {
         date: 'June 5, 2026',
         version: 'v1.0.5',
         title: 'Audit Logging & UI Standardization',
