@@ -109,9 +109,9 @@ export const useGroupsStore = defineStore('groups', () => {
         groupBlocks.forEach(block => {
             const room = roomsStore.rooms.find(r => r.id === block.roomId)
             if (room) {
-                // Create actual reservation with guestId = null
+                // Create actual reservation with empty guests
                 const reservation = reservationsStore.addReservation({
-                    guestId: null, // Nullable guestId
+                    guests: [], // Empty guests list initially
                     groupId: group.id,
                     roomTypeId: room.roomTypeId,
                     roomId: room.id,

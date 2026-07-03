@@ -25,7 +25,7 @@ const logger = useLogger('frontdesk')
 
 const resId = computed(() => parseInt(route.query.id as string, 10))
 const reservation = computed(() => reservationsStore.getById(resId.value))
-const guest = computed(() => reservation.value ? guestsStore.getById(reservation.value.guestId) : undefined)
+const guest = computed(() => reservation.value ? guestsStore.getById(reservationsStore.getPrimaryGuestId(reservation.value)!) : undefined)
 const room = computed(() => reservation.value?.roomId ? roomsStore.rooms.find(r => r.id === reservation.value?.roomId) : undefined)
 
 // Find the associated folio

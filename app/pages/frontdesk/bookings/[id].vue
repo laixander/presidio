@@ -30,7 +30,9 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
 const resId = computed(() => parseInt(route.params.id as string, 10))
 const reservation = computed(() => reservationsStore.getById(resId.value))
 
-const guest = computed(() => reservation.value && reservation.value.guestId ? guestsStore.getById(reservation.value.guestId) : undefined)
+const primaryGuestId = computed(() => reservation.value ? reservationsStore.getPrimaryGuestId(reservation.value) : undefined)
+const primaryGuest = computed(() => primaryGuestId.value ? guestsStore.getById(primaryGuestId.value) : undefined)
+const additionalGuests = computed(() => reservation.value?.guests.filter(g => !g.isPrimary).map(g => guestsStore.getById(g.guestId)) || [])
 const roomType = computed(() => reservation.value ? roomsStore.roomTypes.find(rt => rt.id === reservation.value?.roomTypeId) : undefined)
 const room = computed(() => reservation.value?.roomId ? roomsStore.rooms.find(r => r.id === reservation.value?.roomId) : undefined)
 const folio = computed(() => foliosStore.folios.find(f => f.reservationId === resId.value))
@@ -98,24 +100,39 @@ const nights = computed(() => {
                             Guest Information
                         </div>
                     </template>
-                    <div v-if="guest" class="flex items-start gap-4">
-                        <ULink :to="`/frontdesk/guests/${guest.id}`" class="block hover:opacity-80 transition-opacity">
-                            <GuestAvatar :guest="guest" size="lg" />
-                        </ULink>
-                        <div class="space-y-2">
-                            <div>
-                                <div class="font-bold text-lg">{{ guest.firstName }} {{ guest.lastName }}</div>
-                                <div class="text-sm text-muted">{{ guest.email }}</div>
-                                <div class="text-sm text-muted">{{ guest.phone }}</div>
-                            </div>
-                            <div class="flex gap-2 mt-2">
-                                <UBadge v-if="guest.isVip" color="warning" variant="subtle" icon="i-lucide-crown">VIP</UBadge>
-                                <UBadge v-if="guest.company" color="neutral" variant="subtle" icon="i-lucide-building">{{ guest.company }}</UBadge>
+                    <div class="space-y-4">
+                        <div v-if="primaryGuest" class="flex items-start gap-4">
+                            <ULink :to="`/frontdesk/guests/${primaryGuest.id}`" class="block hover:opacity-80 transition-opacity">
+                                <GuestAvatar :guest="primaryGuest" size="lg" />
+                            </ULink>
+                            <div class="space-y-2">
+                                <div>
+                                    <div class="font-bold text-lg flex items-center gap-2">
+                                        {{ primaryGuest.firstName }} {{ primaryGuest.lastName }}
+                                        <UBadge size="xs" variant="subtle" color="primary">Primary</UBadge>
+                                    </div>
+                                    <div class="text-sm text-muted">{{ primaryGuest.email }}</div>
+                                    <div class="text-sm text-muted">{{ primaryGuest.phone }}</div>
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <UBadge v-if="primaryGuest.isVip" color="warning" variant="subtle" icon="i-lucide-crown">VIP</UBadge>
+                                    <UBadge v-if="primaryGuest.company" color="neutral" variant="subtle" icon="i-lucide-building">{{ primaryGuest.company }}</UBadge>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div v-else class="text-muted italic flex items-center justify-center p-4">
-                        Guest unassigned
+                        <div v-else class="text-muted italic flex items-center justify-center p-4">
+                            Primary guest unassigned
+                        </div>
+                        
+                        <div v-if="additionalGuests.length > 0" class="pt-4 border-t border-default space-y-2">
+                            <h4 class="text-sm font-semibold text-muted">Additional Guests</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <div v-for="g in additionalGuests" :key="g?.id" class="flex items-center gap-2 border border-default p-1.5 pr-3 rounded-full bg-white dark:bg-neutral-950">
+                                    <GuestAvatar v-if="g" :guest="g" size="sm" />
+                                    <span v-if="g" class="text-sm font-medium">{{ guestsStore.getFullName(g) }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </UCard>
 

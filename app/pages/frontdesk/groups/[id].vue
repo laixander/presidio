@@ -167,14 +167,35 @@ const guestAssignmentOptions = computed(() =>
     }))
 )
 
+const selectedGuestsToAssign = reactive<Record<number, any>>({})
+
 const assignGuest = (reservationId: number, guestId: number) => {
-    reservationsStore.updateReservation(reservationId, { guestId })
-    toast.success('Guest Assigned', 'The guest has been successfully assigned to the reservation.')
+    const res = reservationsStore.getById(reservationId)
+    if (!res) return
+    const guests = [...res.guests]
+    if (!guests.some(g => g.guestId === guestId)) {
+        guests.push({ guestId, isPrimary: guests.length === 0 })
+        reservationsStore.updateReservation(reservationId, { guests })
+        toast.success('Guest Assigned', 'The guest has been successfully assigned to the reservation.')
+    }
 }
 
-const unassignGuest = (reservationId: number) => {
-    reservationsStore.updateReservation(reservationId, { guestId: null })
+const unassignGuest = (reservationId: number, guestId: number) => {
+    const res = reservationsStore.getById(reservationId)
+    if (!res) return
+    let guests = (res.guests || []).filter(g => g.guestId !== guestId)
+    if (guests.length > 0 && !guests.some(g => g.isPrimary)) {
+        guests[0].isPrimary = true
+    }
+    reservationsStore.updateReservation(reservationId, { guests })
     toast.success('Guest Removed', 'The guest has been removed from the reservation.')
+}
+
+const setPrimaryGuest = (reservationId: number, guestId: number) => {
+    const res = reservationsStore.getById(reservationId)
+    if (!res) return
+    const guests = res.guests.map(g => ({ ...g, isPrimary: g.guestId === guestId }))
+    reservationsStore.updateReservation(reservationId, { guests })
 }
 
 </script>
@@ -307,7 +328,7 @@ const unassignGuest = (reservationId: number) => {
 
                             <div v-else class="space-y-4">
                                 <UCard v-for="res in groupReservations" :key="res.id"
-                                    :ui="{ body: 'sm:p-4 flex justify-between items-center' }" class="shadow-sm">
+                                    :ui="{ body: 'sm:p-4 flex justify-between items-center gap-8' }" class="shadow-sm">
                                     <div class="flex items-center gap-4">
                                         <div
                                             class="size-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold font-mono">
@@ -321,28 +342,37 @@ const unassignGuest = (reservationId: number) => {
                                         </div>
                                     </div>
 
-                                    <div class="flex-1 sm:max-w-xs w-full">
-                                        <template v-if="res.guestId">
-                                            <div
+                                    <div class="flex-1 w-full space-y-2">
+                                        <template v-if="res.guests && res.guests.length > 0">
+                                            <div v-for="guest in res.guests" :key="guest.guestId"
                                                 class="flex items-center gap-3 border border-default p-2 rounded-md bg-white dark:bg-neutral-950">
-                                                <GuestAvatar :guest="guestsStore.getById(res.guestId)!" size="sm" />
+                                                <UTooltip :text="guest.isPrimary ? 'Primary Guest' : 'Set as Primary'">
+                                                    <UButton icon="i-lucide-star" 
+                                                        :color="guest.isPrimary ? 'primary' : 'neutral'" 
+                                                        :variant="guest.isPrimary ? 'solid' : 'ghost'" 
+                                                        size="xs" 
+                                                        class="shrink-0 rounded-full"
+                                                        @click="setPrimaryGuest(res.id, guest.guestId)" />
+                                                </UTooltip>
+                                                <GuestAvatar :guest="guestsStore.getById(guest.guestId)!" size="sm" />
                                                 <div class="flex-1 min-w-0">
                                                     <p class="text-sm font-semibold truncate">
-                                                        {{
-                                                            guestsStore.getFullName(guestsStore.getById(res.guestId)!)
-                                                        }}
+                                                        {{ guestsStore.getFullName(guestsStore.getById(guest.guestId)!) }}
                                                     </p>
                                                 </div>
                                                 <UTooltip text="Remove Guest" v-if="res.status !== 'In-House' && res.status !== 'Done' && res.status !== 'Cancelled'">
-                                                    <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="unassignGuest(res.id)" class="shrink-0" />
+                                                    <UButton icon="i-lucide-x" color="error" variant="ghost" size="xs" @click="unassignGuest(res.id, guest.guestId)" class="shrink-0" />
                                                 </UTooltip>
                                             </div>
                                         </template>
-                                        <template v-else>
-                                            <USelect :items="guestAssignmentOptions" placeholder="Assign Guest..."
+                                        <div v-if="res.status !== 'In-House' && res.status !== 'Done' && res.status !== 'Cancelled'">
+                                            <USelectMenu :key="`select-${res.id}-${(res.guests || []).length}`"
+                                                v-model="selectedGuestsToAssign[res.id]"
+                                                :items="guestAssignmentOptions.filter(opt => !(res.guests || []).some(g => g.guestId === opt.value))" 
+                                                placeholder="Assign guest..."
                                                 class="w-full"
-                                                @update:modelValue="(val) => assignGuest(res.id, Number(val))" />
-                                        </template>
+                                                @update:modelValue="(val) => { if(val) { assignGuest(res.id, Number(val.value || val)); selectedGuestsToAssign[res.id] = undefined } }" />
+                                        </div>
                                     </div>
 
                                     <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">

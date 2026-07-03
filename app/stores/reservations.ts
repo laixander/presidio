@@ -81,6 +81,15 @@ export const useReservationsStore = defineStore('reservations', () => {
     const getById = (id: number): Reservation | undefined =>
         reservations.value.find(r => r.id === id)
 
+    /**
+     * Get the primary guest ID for a reservation.
+     */
+    const getPrimaryGuestId = (reservation: Reservation | undefined): number | undefined => {
+        if (!reservation) return undefined
+        const primary = reservation.guests.find(g => g.isPrimary)
+        return primary ? primary.guestId : reservation.guests[0]?.guestId
+    }
+
     // ============================================================================
     // Actions
     // ============================================================================
@@ -147,7 +156,7 @@ export const useReservationsStore = defineStore('reservations', () => {
         // State
         reservations, isLoading, isHydrated,
         // Getters
-        statusCounts, totalBookings, inHouseGuests, arrivalsToday, departuresToday, getById,
+        statusCounts, totalBookings, inHouseGuests, arrivalsToday, departuresToday, getById, getPrimaryGuestId,
         // Actions
         hydrate, generateBookingRef, addReservation, updateReservation, setStatus, deleteReservation, seed, clear
     }

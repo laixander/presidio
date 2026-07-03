@@ -32,6 +32,18 @@ interface ChangelogEntry {
 
 const changelogs: ChangelogEntry[] = [
     {
+        date: 'July 3, 2026',
+        version: 'v1.0.7',
+        title: 'Multiple Guest Assignment',
+        description: 'Introduced the ability to assign multiple guests to a single reservation, along with primary guest designation.',
+        changes: [
+            { type: 'feature', text: 'Updated New Reservation form to support multiple guest selection with automatic primary guest designation.' },
+            { type: 'feature', text: 'Enhanced Group Bookings room blocking to allow assigning multiple guests to a blocked room.' },
+            { type: 'refactor', text: 'Refactored internal Reservation model to store an array of guests instead of a single guestId.' },
+            { type: 'refactor', text: 'Updated all dashboards, check-in/out flows, and billing folios to display and utilize the primary guest context.' }
+        ]
+    },
+    {
         date: 'June 16, 2026',
         version: 'v1.0.6',
         title: 'Group Booking Management & UX Enhancements',

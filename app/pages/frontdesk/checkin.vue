@@ -27,7 +27,7 @@ const logger = useLogger('frontdesk')
 
 const resId = computed(() => parseInt(route.query.id as string, 10))
 const reservation = computed(() => reservationsStore.getById(resId.value))
-const guest = computed(() => reservation.value ? guestsStore.getById(reservation.value.guestId) : undefined)
+const guest = computed(() => reservation.value ? guestsStore.getById(reservationsStore.getPrimaryGuestId(reservation.value)!) : undefined)
 const roomType = computed(() => reservation.value ? roomsStore.roomTypes.find(rt => rt.id === reservation.value?.roomTypeId) : undefined)
 
 const selectedRoomId = ref<number>(0)

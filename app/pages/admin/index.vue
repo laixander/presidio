@@ -75,7 +75,8 @@ const reservationStatusData = computed(() => ({
 
 const departuresList = computed(() =>
     reservationsStore.departuresToday.map(r => {
-        const guest = guestsStore.getById(r.guestId)
+        const guestId = reservationsStore.getPrimaryGuestId(r)
+        const guest = guestId ? guestsStore.getById(guestId) : undefined
         const room = roomsStore.rooms.find(rm => rm.id === r.roomId)
         return {
             guestName: guest ? guestsStore.getFullName(guest) : 'Unknown',
