@@ -33,7 +33,8 @@ events.on('searchAvailability', () => {
 
 const arrivalsList = computed(() => {
     return reservationsStore.arrivalsToday.map(r => {
-        const guest = r.guestId ? guestsStore.getById(r.guestId) : undefined
+        const primaryGuestId = r.guests?.find(g => g.isPrimary)?.guestId || r.guests?.[0]?.guestId
+        const guest = primaryGuestId ? guestsStore.getById(primaryGuestId) : undefined
         const room = r.roomId ? roomsStore.rooms.find(rm => rm.id === r.roomId) : null
         return {
             id: r.id,
@@ -47,7 +48,8 @@ const arrivalsList = computed(() => {
 
 const departuresList = computed(() => {
     return reservationsStore.departuresToday.map(r => {
-        const guest = r.guestId ? guestsStore.getById(r.guestId) : undefined
+        const primaryGuestId = r.guests?.find(g => g.isPrimary)?.guestId || r.guests?.[0]?.guestId
+        const guest = primaryGuestId ? guestsStore.getById(primaryGuestId) : undefined
         const room = r.roomId ? roomsStore.rooms.find(rm => rm.id === r.roomId) : null
         return {
             id: r.id,

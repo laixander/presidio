@@ -85,7 +85,7 @@ export const useFoliosStore = defineStore('folios', () => {
 
         const folio = folios.value.find(f => f.id === folioId)
         if (folio) {
-            folio.balance = totalCharges - totalPaid
+            folio.balance = Math.round((totalCharges - totalPaid) * 100) / 100
         }
     }
 
@@ -139,6 +139,7 @@ export const useFoliosStore = defineStore('folios', () => {
         folios.value = newFolios
         charges.value = newCharges
         payments.value = newPayments
+        folios.value.forEach(f => recalculateBalance(f.id))
         persist()
     }
 
