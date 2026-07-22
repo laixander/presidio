@@ -94,7 +94,7 @@ export const useDemoSeeder = () => {
             return {
                 id: i + 1,
                 bookingRef: `PRS-100${i + 1}`,
-                guestId: guest.id,
+                guests: [{ guestId: guest.id, isPrimary: true }],
                 roomTypeId: room.roomTypeId,
                 roomId: faker.datatype.boolean({ probability: 0.8 }) ? room.id : null,
                 checkInDate: faker.date.recent({ days: 10 }).toISOString().split('T')[0],
@@ -123,7 +123,7 @@ export const useDemoSeeder = () => {
             generatedFolios.push({
                 id: folioId,
                 folioNumber: `FOL-00${folioId}`,
-                guestId: res.guestId,
+                guestId: res.guests.find(g => g.isPrimary)?.guestId || 0,
                 reservationId: res.id,
                 status: faker.helpers.arrayElement(folioStatuses),
                 balance,

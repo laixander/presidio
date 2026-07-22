@@ -80,7 +80,7 @@ const arrivalColumns: TableColumn<typeof arrivalsList.value[0]>[] = [
         cell: ({ row }) => {
             const status = row.original.status
             if (status === 'In-House') return h('span', { class: 'text-xs text-success-600 font-medium' }, 'Checked In')
-            
+
             return h(UButton, {
                 label: 'Check-In',
                 size: 'xs',
@@ -108,7 +108,7 @@ const departureColumns: TableColumn<typeof departuresList.value[0]>[] = [
         cell: ({ row }) => {
             const status = row.original.status
             if (status === 'Done') return h('span', { class: 'text-xs text-success-600 font-medium' }, 'Checked Out')
-            
+
             return h(UButton, {
                 label: 'Check-Out',
                 size: 'xs',
@@ -125,7 +125,8 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
 </script>
 
 <template>
-    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Front Desk staff or an Administrator to access this module." icon="i-lucide-lock" />
+    <AuthGate v-if="!isAuthorized" title="Access Denied"
+        description="You must be Front Desk staff or an Administrator to access this module." icon="i-lucide-lock" />
 
     <template v-else>
         <UPageCard title="Front Desk Overview" description="Manage today's arrivals, departures, and in-house guests."
@@ -142,8 +143,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
         <!-- ── KPI Stat Cards ──────────────────────────────────────────────── -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">
             <StatCard title="In-House Guests" :value="reservationsStore.inHouseGuests.length" icon="i-lucide-users"
-                :trend="`${reservationsStore.totalBookings} total bookings`"
-                trend-direction="flat" />
+                :trend="`${reservationsStore.totalBookings} total bookings`" trend-direction="flat" />
             <StatCard title="Arrivals Today" :value="arrivalsList.length" icon="i-lucide-log-in"
                 :trend="`${arrivalsList.filter(a => a.status === 'In-House').length} checked in`"
                 trend-direction="flat" />
@@ -151,13 +151,12 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
                 :trend="`${departuresList.filter(d => d.status === 'Done').length} checked out`"
                 trend-direction="flat" />
             <StatCard title="Vacant Rooms" :value="roomsStore.availableRooms.length" icon="i-lucide-door-open"
-                :trend="`Out of ${roomsStore.rooms.length} total`"
-                trend-direction="flat" />
+                :trend="`Out of ${roomsStore.rooms.length} total`" trend-direction="flat" />
         </div>
 
         <!-- ── Arrivals & Departures Tables ────────────────────────────────── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
-            
+
             <!-- Today's Arrivals -->
             <UCard variant="subtle" class="shadow-sm" :ui="{ body: 'p-0 sm:p-0' }">
                 <template #header>
@@ -171,7 +170,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
                         </UBadge>
                     </div>
                 </template>
-                
+
                 <UTable :data="arrivalsList" :columns="arrivalColumns" class="scrollbar">
                     <template #empty>
                         <div class="text-sm text-muted py-8 text-center flex flex-col items-center gap-2">

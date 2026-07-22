@@ -78,7 +78,7 @@ const handleSettleFolio = () => {
         toast.error('Outstanding Balance', 'Cannot settle a folio with an outstanding balance.')
         return
     }
-    
+
     foliosStore.settleFolio(folio.value.id)
     logger.addLog(`Settled Folio #${folio.value.folioNumber}`, 'Settlement', 'success')
     toast.success('Folio Settled', `Folio ${folio.value.folioNumber} has been closed.`)
@@ -132,14 +132,16 @@ const paymentColumns: TableColumn<Payment>[] = [
 </script>
 
 <template>
-    <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Billing staff or an Administrator to view Folio details." icon="i-lucide-lock" />
+    <AuthGate v-if="!isAuthorized" title="Access Denied"
+        description="You must be Billing staff or an Administrator to view Folio details." icon="i-lucide-lock" />
 
     <template v-else>
         <div v-if="folio" class="space-y-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center gap-4">
-                    <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="router.push('/billing')" />
+                    <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost"
+                        @click="router.push('/billing')" />
                     <div>
                         <div class="flex items-center gap-3">
                             <h1 class="text-2xl font-bold">Folio {{ folio.folioNumber }}</h1>
@@ -153,11 +155,12 @@ const paymentColumns: TableColumn<Payment>[] = [
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex items-center gap-4">
                     <div class="text-right">
                         <div class="text-sm text-muted uppercase tracking-wider font-semibold">Balance Due</div>
-                        <div class="text-3xl font-bold font-mono" :class="folio.balance > 0 ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'">
+                        <div class="text-3xl font-bold font-mono"
+                            :class="folio.balance > 0 ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'">
                             {{ formatCurrency(folio.balance) }}
                         </div>
                     </div>
@@ -166,40 +169,20 @@ const paymentColumns: TableColumn<Payment>[] = [
 
             <ClientOnly>
                 <Teleport to="#header-actions-teleport">
-                    <UButton 
-                        v-if="folio.status === 'Open'"
-                        label="Post Charge" 
-                        icon="i-lucide-plus" 
-                        variant="soft"
-                        @click="showChargeModal = true" 
-                    />
-                    <UButton 
-                        v-if="folio.status === 'Open'"
-                        label="Apply Payment" 
-                        icon="i-lucide-banknote" 
-                        variant="soft"
-                        @click="showPaymentModal = true" 
-                    />
-                    <UButton 
-                        v-if="folio.status === 'Open'"
-                        label="Settle Folio" 
-                        icon="i-lucide-check-circle"
-                        :disabled="folio.balance > 0"
-                        @click="handleSettleFolio" 
-                    />
-                    <UButton 
-                        v-if="folio.status === 'Settled' || folio.status === 'Closed'"
-                        label="Print Invoice" 
-                        icon="i-lucide-printer" 
-                        color="neutral" 
-                        variant="soft"
-                    />
+                    <UButton v-if="folio.status === 'Open'" label="Post Charge" icon="i-lucide-plus" variant="soft"
+                        @click="showChargeModal = true" />
+                    <UButton v-if="folio.status === 'Open'" label="Apply Payment" icon="i-lucide-banknote"
+                        variant="soft" @click="showPaymentModal = true" />
+                    <UButton v-if="folio.status === 'Open'" label="Settle Folio" icon="i-lucide-check-circle"
+                        :disabled="folio.balance > 0" @click="handleSettleFolio" />
+                    <UButton v-if="folio.status === 'Settled' || folio.status === 'Closed'" label="Print Invoice"
+                        icon="i-lucide-printer" color="neutral" variant="soft" />
                 </Teleport>
             </ClientOnly>
-            
+
             <!-- Split View: Charges & Payments -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
+
                 <!-- Charges Table -->
                 <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="shadow-sm">
                     <template #header>
@@ -227,7 +210,8 @@ const paymentColumns: TableColumn<Payment>[] = [
                 </UCard>
 
                 <!-- Payments Table -->
-                <UCard variant="subtle" :ui="{ root: 'flex flex-col flex-1 min-h-0', body: 'p-0 sm:p-0 flex-1' }" class="shadow-sm">
+                <UCard variant="subtle" :ui="{ root: 'flex flex-col flex-1 min-h-0', body: 'p-0 sm:p-0 flex-1' }"
+                    class="shadow-sm">
                     <template #header>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 font-semibold">
@@ -247,24 +231,18 @@ const paymentColumns: TableColumn<Payment>[] = [
                     </UTable>
                     <template #footer>
                         <div class="text-right font-semibold text-sm">
-                            Total Payments: <span class="font-mono ml-2" :class="totalPayments > 0 ? 'text-success-600 dark:text-success-400' : ''">{{ totalPayments > 0 ? '- ' : '' }}{{ formatCurrency(totalPayments) }}</span>
+                            Total Payments: <span class="font-mono ml-2"
+                                :class="totalPayments > 0 ? 'text-success-600 dark:text-success-400' : ''">{{
+                                totalPayments > 0 ? '- ' : '' }}{{ formatCurrency(totalPayments) }}</span>
                         </div>
                     </template>
                 </UCard>
             </div>
 
-            <ChargeModal 
-                v-model:open="showChargeModal" 
-                :folioId="folio.id"
-                @submit="handlePostCharge" 
-            />
-            
-            <PaymentModal 
-                v-model:open="showPaymentModal" 
-                :folioId="folio.id"
-                :balanceDue="folio.balance"
-                @submit="handleApplyPayment" 
-            />
+            <ChargeModal v-model:open="showChargeModal" :folioId="folio.id" @submit="handlePostCharge" />
+
+            <PaymentModal v-model:open="showPaymentModal" :folioId="folio.id" :balanceDue="folio.balance"
+                @submit="handleApplyPayment" />
         </div>
         <div v-else class="flex flex-col items-center justify-center py-20">
             <UIcon name="i-lucide-file-question" class="size-16 text-neutral-300 mb-4" />

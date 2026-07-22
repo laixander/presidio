@@ -139,13 +139,18 @@ export interface RoomBlock {
   status: 'Blocked' | 'Reserved' | 'Released'
 }
 
+export interface ReservationGuest {
+  guestId: number
+  isPrimary: boolean
+}
+
 /**
  * Represents a guest reservation / booking.
  */
 export interface Reservation {
   id: number
   bookingRef: string
-  guestId: number | null
+  guests: ReservationGuest[]
   groupId?: number
   roomTypeId: number
   roomId: number | null

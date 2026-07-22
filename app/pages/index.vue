@@ -81,6 +81,21 @@ const handleLogin = () => {
                 <ULink as="button" class="text-sm">Forgot Password?</ULink>
             </footer>
         </UCard>
+
+        <!-- Page Footer -->
+        <div class="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1.5">
+            <div class="flex items-center gap-1 text-xs text-muted">
+                <span>&copy; {{ new Date().getFullYear() }} Presidio Hotel PMS.</span>
+                <span class="opacity-40"><UIcon
+                name="i-lucide-dot"
+                class="size-4 flex"
+                /></span>
+                <span>Made with ❤️ by <span class="text-primary">Laix</span></span>
+            </div>
+            <span class="flex items-center gap-2 text-xs text-muted hover:text-highlighted transition-colors">
+                ☕ <span>Buy me a coffee</span>
+            </span>
+        </div>
     </div>
 </template>
 

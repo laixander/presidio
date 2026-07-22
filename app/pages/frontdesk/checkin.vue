@@ -45,7 +45,7 @@ const availableRooms = computed(() => {
     return roomsStore.availableRooms.filter(r => r.roomTypeId === reservation.value?.roomTypeId)
 })
 
-const roomOptions = computed(() => 
+const roomOptions = computed(() =>
     availableRooms.value.map(r => ({
         label: `Room ${r.number}`,
         value: r.id
@@ -58,7 +58,7 @@ onMounted(() => {
         router.push('/frontdesk')
         return
     }
-    
+
     // Auto-select room if one is already assigned
     if (reservation.value.roomId) {
         selectedRoomId.value = reservation.value.roomId
@@ -67,27 +67,27 @@ onMounted(() => {
 
 const confirmCheckIn = () => {
     if (!reservation.value || !guest.value) return
-    
+
     if (!selectedRoomId.value) {
         toast.error('Room Required', 'Please assign a room before checking in.')
         return
     }
-    
+
     // ========================================================================
     // Orchestrated State Updates
     // ========================================================================
-    
+
     // 1. Assign room to reservation & update status
     reservationsStore.updateReservation(reservation.value.id, {
         roomId: selectedRoomId.value,
         status: 'In-House'
     })
-    
+
     // 2. Update room occupancy
     roomsStore.updateRoom(selectedRoomId.value, {
         occupancyStatus: 'Occupied'
     })
-    
+
     // 3. Generate Folio
     const newFolio = foliosStore.addFolio({
         guestId: guest.value.id,
@@ -96,10 +96,10 @@ const confirmCheckIn = () => {
         balance: 0,
         openedAt: new Date().toISOString()
     })
-    
+
     logger.addLog(`Checked in ${guestsStore.getFullName(guest.value)} to Room ${roomsStore.rooms.find(r => r.id === selectedRoomId.value)?.number}`, 'Checked In', 'success')
     toast.success('Check-In Successful', `${guestsStore.getFullName(guest.value)} has been checked into the system. Folio ${newFolio.folioNumber} created.`)
-    
+
     router.push('/frontdesk')
 }
 </script>
@@ -115,10 +115,10 @@ const confirmCheckIn = () => {
         </div>
 
         <div v-if="reservation && guest" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             <!-- Left Column: Details -->
             <div class="md:col-span-2 space-y-6">
-                
+
                 <!-- Guest Info -->
                 <UCard>
                     <template #header>
@@ -130,16 +130,24 @@ const confirmCheckIn = () => {
                     <div class="flex items-start gap-4">
                         <GuestAvatar :guest="guest" size="lg" />
                         <div>
-                            <div class="text-xl font-bold">{{ guestsStore.getFullName(guest) }} <UBadge v-if="guest.isVip" label="VIP" color="primary" size="xs" variant="subtle" /></div>
+                            <div class="text-xl font-bold">{{ guestsStore.getFullName(guest) }}
+                                <UBadge v-if="guest.isVip" label="VIP" color="primary" size="xs" variant="subtle" />
+                            </div>
                             <div class="text-sm text-muted mt-1 space-y-1">
-                                <div v-if="guest.email" class="flex items-center gap-2"><UIcon name="i-lucide-mail" class="size-4" /> {{ guest.email }}</div>
-                                <div v-if="guest.phone" class="flex items-center gap-2"><UIcon name="i-lucide-phone" class="size-4" /> {{ guest.phone }}</div>
-                                <div v-if="guest.company" class="flex items-center gap-2"><UIcon name="i-lucide-building" class="size-4" /> {{ guest.company }}</div>
+                                <div v-if="guest.email" class="flex items-center gap-2">
+                                    <UIcon name="i-lucide-mail" class="size-4" /> {{ guest.email }}
+                                </div>
+                                <div v-if="guest.phone" class="flex items-center gap-2">
+                                    <UIcon name="i-lucide-phone" class="size-4" /> {{ guest.phone }}
+                                </div>
+                                <div v-if="guest.company" class="flex items-center gap-2">
+                                    <UIcon name="i-lucide-building" class="size-4" /> {{ guest.company }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </UCard>
-                
+
                 <!-- Room Assignment -->
                 <UCard>
                     <template #header>
@@ -148,35 +156,32 @@ const confirmCheckIn = () => {
                             Room Assignment
                         </h3>
                     </template>
-                    
+
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center p-3 rounded-md bg-neutral-50 dark:bg-neutral-900 border border-default">
+                        <div
+                            class="flex justify-between items-center p-3 rounded-md bg-neutral-50 dark:bg-neutral-900 border border-default">
                             <div>
-                                <div class="text-xs text-muted font-medium uppercase tracking-wider mb-1">Requested Type</div>
+                                <div class="text-xs text-muted font-medium uppercase tracking-wider mb-1">Requested Type
+                                </div>
                                 <div class="font-semibold">{{ roomType?.name || 'Unknown' }}</div>
                             </div>
                             <UBadge color="neutral" variant="soft">{{ availableRooms.length }} Available</UBadge>
                         </div>
-                        
+
                         <UFormField label="Assign physical room number" name="roomId">
-                            <USelect 
-                                v-model.number="selectedRoomId" 
-                                :items="roomOptions" 
-                                placeholder="Select a clean, vacant room..." 
-                                icon="i-lucide-door-open" 
-                                class="w-full" 
-                                size="lg"
-                            />
+                            <USelect v-model.number="selectedRoomId" :items="roomOptions"
+                                placeholder="Select a clean, vacant room..." icon="i-lucide-door-open" class="w-full"
+                                size="lg" />
                         </UFormField>
                     </div>
                 </UCard>
             </div>
-            
+
             <!-- Right Column: Summary & Action -->
             <div class="space-y-6">
                 <UCard class="bg-primary-50 dark:bg-primary-950/20 border-primary-200 dark:border-primary-800">
                     <h3 class="font-bold text-lg mb-4 text-primary-900 dark:text-primary-100">Stay Summary</h3>
-                    
+
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between pb-2 border-b border-primary-200 dark:border-primary-800/50">
                             <span class="text-primary-600 dark:text-primary-400">Check-In</span>
@@ -195,24 +200,19 @@ const confirmCheckIn = () => {
                             <StatusBadge :status="reservation.status" />
                         </div>
                     </div>
-                    
+
                     <div class="mt-8 pt-4 border-t border-primary-200 dark:border-primary-800/50">
-                        <UButton 
-                            label="Confirm Check-In" 
-                            color="primary" 
-                            size="xl" 
-                            block 
-                            icon="i-lucide-check-circle"
-                            :disabled="!selectedRoomId"
-                            @click="confirmCheckIn"
-                        />
-                        <p class="text-xs text-center mt-3 text-primary-600 dark:text-primary-400">This will assign the room and open a billing folio.</p>
+                        <UButton label="Confirm Check-In" color="primary" size="xl" block icon="i-lucide-check-circle"
+                            :disabled="!selectedRoomId" @click="confirmCheckIn" />
+                        <p class="text-xs text-center mt-3 text-primary-600 dark:text-primary-400">This will assign the
+                            room and
+                            open a billing folio.</p>
                     </div>
                 </UCard>
             </div>
-            
+
         </div>
-        
+
         <div v-else class="py-12 text-center">
             <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mx-auto text-primary" />
             <p class="mt-4 text-muted">Loading reservation data...</p>

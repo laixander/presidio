@@ -92,7 +92,7 @@ export const useSimulation = () => {
         checkOut.setDate(checkIn.getDate() + Math.floor(Math.random() * 5) + 1)
 
         const res = reservationsStore.addReservation({
-            guestId: guest.id,
+            guests: [{ guestId: guest.id, isPrimary: true }],
             roomTypeId: roomType.id,
             roomId: null,
             checkInDate: checkIn.toISOString().substring(0, 10),
@@ -121,7 +121,7 @@ export const useSimulation = () => {
         reservationsStore.updateReservation(res.id, { status: 'In-House', roomId: room.id })
         roomsStore.updateRoom(room.id, { occupancyStatus: 'Occupied' })
         foliosStore.addFolio({
-            guestId: res.guestId,
+            guestId: reservationsStore.getPrimaryGuestId(res) || 0,
             reservationId: res.id,
             status: 'Open',
             balance: 0,

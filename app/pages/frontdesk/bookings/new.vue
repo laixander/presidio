@@ -42,7 +42,8 @@ const sourceOptions = ['Walk-in', 'Phone', 'OTA', 'Corporate']
 const statusOptions = ['Pending', 'Confirmed']
 
 const schema = z.object({
-    guestId: z.number().min(1, 'Please select a guest'),
+    guestIds: z.array(z.number()).min(1, 'Please select at least one guest'),
+    primaryGuestId: z.number().min(1, 'Please select a primary guest'),
     checkInDate: z.string().min(1, 'Check-in date is required'),
     checkOutDate: z.string().min(1, 'Check-out date is required'),
     roomTypeId: z.number().min(1, 'Please select a room type'),
@@ -53,7 +54,8 @@ const schema = z.object({
 type Schema = z.output<typeof schema>
 
 const state = reactive({
-    guestId: 0,
+    guestIds: [] as number[],
+    primaryGuestId: 0,
     checkInDate: '',
     checkOutDate: '',
     roomTypeId: 0,
@@ -68,11 +70,24 @@ onMounted(() => {
     if (route.query.roomTypeId) state.roomTypeId = parseInt(route.query.roomTypeId as string, 10)
 })
 
+watch(() => state.guestIds, (newIds) => {
+    if (newIds.length > 0 && !newIds.includes(state.primaryGuestId)) {
+        state.primaryGuestId = newIds[0]!
+    } else if (newIds.length === 0) {
+        state.primaryGuestId = 0
+    }
+})
+
 const handleSubmit = (event: FormSubmitEvent<Schema>) => {
     // We pass `roomId: null` because in real-world PMS logic, physical rooms 
     // are often not assigned until the day of arrival to allow for inventory optimization.
+    const guests = event.data.guestIds.map(id => ({
+        guestId: id,
+        isPrimary: id === event.data.primaryGuestId
+    }))
+
     const reservation = reservationsStore.addReservation({
-        guestId: event.data.guestId,
+        guests,
         roomTypeId: event.data.roomTypeId,
         roomId: null, // Room assignment happens at Check-In
         checkInDate: event.data.checkInDate,
@@ -81,7 +96,7 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
         source: event.data.source
     })
     
-    logger.addLog(`Created reservation ${reservation.bookingRef} for Guest ID ${reservation.guestId}`, 'Created', 'success')
+    logger.addLog(`Created reservation ${reservation.bookingRef}`, 'Created', 'success')
     toast.success('Reservation Created', `Booking ${reservation.bookingRef} has been successfully created.`)
     
     router.push('/frontdesk/bookings')
@@ -104,11 +119,17 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
                 <!-- Guest Selection -->
                 <div class="space-y-4">
                     <h3 class="text-lg font-medium border-b border-default pb-2">1. Guest Details</h3>
-                    <UFormField label="Select Guest" name="guestId">
-                        <USelect v-model.number="state.guestId" :items="guestOptions" placeholder="Search or select a guest..." class="w-full" />
+                    <UFormField label="Select Guests" name="guestIds">
+                        <USelectMenu v-model="state.guestIds" :items="guestOptions" placeholder="Search or select guests..." multiple class="w-full" value-key="value" label-key="label" />
                         <template #help>
-                            <span class="text-xs text-muted">Guest not listed? <ULink to="/frontdesk/guests" class="text-primary font-medium">Go to Guests directory to add them.</ULink></span>
+                            <span class="text-xs text-muted">Guests not listed? <ULink to="/frontdesk/guests" class="text-primary font-medium">Go to Guests directory to add them.</ULink></span>
                         </template>
+                    </UFormField>
+
+                    <UFormField v-if="state.guestIds.length > 0" label="Primary Guest" name="primaryGuestId">
+                        <div class="space-y-2">
+                            <URadioGroup v-model="state.primaryGuestId" :items="guestOptions.filter(g => state.guestIds.includes(g.value))" value-key="value" label-key="label" />
+                        </div>
                     </UFormField>
                 </div>
 

@@ -21,7 +21,7 @@ const guest = computed(() => guestsStore.getById(guestId))
 const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value as string))
 
 const guestReservations = computed(() => 
-    reservationsStore.reservations.filter(r => r.guestId === guestId)
+    reservationsStore.reservations.filter(r => r.guests?.some(g => g.guestId === guestId))
 )
 
 const columns: TableColumn<Reservation>[] = [
