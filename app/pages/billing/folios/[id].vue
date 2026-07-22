@@ -36,7 +36,7 @@ const folio = computed(() => foliosStore.getById(folioId.value))
 
 // Safely resolve relations
 const reservation = computed(() => folio.value ? reservationsStore.getById(folio.value.reservationId) : undefined)
-const guest = computed(() => reservation.value ? guestsStore.getById(reservation.value.guestId) : undefined)
+const guest = computed(() => (reservation.value && reservation.value.guestId) ? guestsStore.getById(reservation.value.guestId) : undefined)
 
 const authStore = useDemoAuth()
 const isAuthorized = computed(() => ['Administrator', 'Billing'].includes(authStore.currentRole.value ?? ''))
