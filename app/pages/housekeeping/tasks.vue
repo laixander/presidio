@@ -5,12 +5,11 @@
  * ============================================================================
  * Detailed data table of all pending and completed housekeeping tasks.
  */
-import { h, computed } from 'vue'
+import { h, computed, ref } from 'vue'
 import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
-import { UButton, UDropdownMenu, UBadge } from '#components'
+import { UButton, UDropdownMenu, UBadge, UFieldGroup, UChip, UCard } from '#components'
 
 import type { HousekeepingTask, TaskStatus, TaskType } from '~/types'
-
 
 definePageMeta({
     title: 'Housekeeping Tasks',
@@ -79,6 +78,93 @@ const handleFinishTask = (task: HousekeepingTask) => {
     }
     
     toast.success('Task Completed', `Task #${task.id} has been marked as completed.`)
+}
+
+// ============================================================================
+// Kanban Logic
+// ============================================================================
+const viewMode = ref<'table' | 'kanban'>('kanban')
+
+const kanbanColumns = [
+    { id: 'Pending', title: 'To Clean', color: 'neutral', icon: 'i-lucide-file-text' },
+    { id: 'In Progress', title: 'In Progress', color: 'primary', icon: 'i-lucide-play-circle' },
+    { id: 'Completed', title: 'Done', color: 'success', icon: 'i-lucide-check-circle' }
+]
+
+const isDragging = ref(false)
+const dragging = ref<{ taskId: number; fromColumnId: TaskStatus } | null>(null)
+const dragOver = ref<{ columnId: TaskStatus; taskId: number | null } | null>(null)
+
+const isDraggingCard = (id: number) => dragging.value?.taskId === id
+const isColumnOver = (columnId: TaskStatus) => dragOver.value?.columnId === columnId
+const isCardOver = (id: number) => dragOver.value?.taskId === id
+
+const onCardDragStart = (e: DragEvent, taskId: number, columnId: TaskStatus) => {
+    isDragging.value = true
+    dragging.value = { taskId, fromColumnId: columnId }
+    if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move'
+    }
+}
+
+const onCardDragOver = (taskId: number, columnId: TaskStatus) => {
+    if (!dragging.value) return
+    if (dragOver.value?.taskId === taskId && dragOver.value?.columnId === columnId) return
+    dragOver.value = { columnId, taskId }
+}
+
+const onColumnDragOver = (columnId: TaskStatus) => {
+    if (!dragging.value) return
+    if (dragOver.value?.columnId === columnId && dragOver.value?.taskId === null) return
+    dragOver.value = { columnId, taskId: null }
+}
+
+const moveTask = (taskId: number, fromColumnId: TaskStatus, toColumnId: TaskStatus) => {
+    const task = housekeepingStore.tasks.find(t => t.id === taskId)
+    if (task && task.status !== toColumnId) {
+        if (toColumnId === 'In Progress') {
+            handleStartTask(task)
+        } else if (toColumnId === 'Completed') {
+            handleFinishTask(task)
+        } else {
+            housekeepingStore.setTaskStatus(taskId, 'Pending')
+            toast.success('Status updated', 'Task returned to Pending')
+        }
+    }
+}
+
+const onDrop = (toColumnId: TaskStatus) => {
+    if (!dragging.value) return
+    const { taskId, fromColumnId } = dragging.value
+    moveTask(taskId, fromColumnId, toColumnId)
+    dragging.value = null
+    dragOver.value = null
+    setTimeout(() => { isDragging.value = false }, 50)
+}
+
+const onDragEnd = () => {
+    dragging.value = null
+    dragOver.value = null
+    setTimeout(() => { isDragging.value = false }, 50)
+}
+
+const displayColumns = computed(() => {
+    return kanbanColumns.map(col => {
+        return {
+            ...col,
+            cards: housekeepingStore.tasks.filter(t => t.status === col.id)
+        }
+    })
+})
+
+const getTaskLocation = (task: HousekeepingTask) => {
+    if (task.roomId) {
+        const room = roomsStore.rooms.find(r => r.id === task.roomId)
+        return `Room ${room?.number || 'Unknown'}`
+    } else if (task.area) {
+        return task.area
+    }
+    return 'Unknown'
 }
 
 // ============================================================================
@@ -227,10 +313,97 @@ const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(a
                     <UIcon name="i-lucide-clipboard-list" class="text-primary" />
                     All Tasks
                 </div>
+                
+                <div class="flex gap-2">
+                    <UFieldGroup size="sm">
+                        <UButton 
+                            icon="i-lucide-layout-kanban" 
+                            :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
+                            :variant="viewMode === 'kanban' ? 'soft' : 'ghost'"
+                            @click="viewMode = 'kanban'"
+                        />
+                        <UButton 
+                            icon="i-lucide-list" 
+                            :color="viewMode === 'table' ? 'primary' : 'neutral'"
+                            :variant="viewMode === 'table' ? 'soft' : 'ghost'"
+                            @click="viewMode = 'table'"
+                        />
+                    </UFieldGroup>
+                </div>
             </div>
+
+            <!-- Kanban View -->
+            <template v-if="viewMode === 'kanban'">
+                <div class="flex-1 min-h-0 flex flex-col bg-neutral-50 dark:bg-neutral-900/30">
+                    <div class="flex-1 flex gap-3 overflow-x-auto scrollbar p-4">
+                        <div v-for="column in displayColumns" :key="column.id" class="flex flex-col w-80 shrink-0 gap-2">
+                            <!-- Column header -->
+                            <div class="flex items-center gap-2 p-2 rounded-xl shrink-0">
+                                <UChip :color="column.color as any" size="2xl" standalone inset />
+                                <UIcon :name="column.icon" class="size-4 text-muted shrink-0" />
+                                <span class="text-sm font-semibold truncate">{{ column.title }}</span>
+                                <UBadge :label="String(column.cards.length)" variant="soft" color="neutral" class="ml-auto shrink-0 font-mono" />
+                            </div>
+
+                            <!-- Drop zone -->
+                            <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto scrollbar rounded-xl p-2 transition-all duration-150"
+                                :class="isColumnOver(column.id as TaskStatus) ? 'bg-primary/5 ring-2 ring-primary/30 ring-dashed' : 'bg-elevated/40'" 
+                                @dragover.prevent="onColumnDragOver(column.id as TaskStatus)"
+                                @drop.prevent="onDrop(column.id as TaskStatus)" 
+                                @dragend="onDragEnd">
+                                
+                                <template v-for="task in column.cards" :key="task.id">
+                                    <div class="relative">
+                                        <div v-if="isCardOver(task.id)" class="absolute -top-[5px] left-1 right-1 h-0.5 rounded-full bg-primary z-10 pointer-events-none" />
+                                        
+                                        <UCard :ui="{ root: 'ring-0 border border-default', body: 'sm:p-4 relative space-y-2' }"
+                                            class="group transition-all select-none shrink-0 cursor-pointer active:cursor-default hover:border-primary/30 hover:shadow-sm" 
+                                            :class="[isDraggingCard(task.id) && 'opacity-40 scale-95']" 
+                                            draggable="true"
+                                            @dragstart="onCardDragStart($event, task.id, column.id as TaskStatus)"
+                                            @dragover.prevent.stop="onCardDragOver(task.id, column.id as TaskStatus)"
+                                            @drop.prevent.stop="onDrop(column.id as TaskStatus)" 
+                                            @dragend="onDragEnd">
+                                            
+                                            <div class="flex items-start justify-between gap-2">
+                                                <p class="text-sm font-medium leading-snug text-highlighted line-clamp-1">
+                                                    Task #{{ task.id }}
+                                                </p>
+                                                <UBadge :label="getTaskLocation(task)" color="neutral" variant="soft" size="xs" class="shrink-0" />
+                                            </div>
+                                            
+                                            <p class="text-xs text-muted leading-relaxed line-clamp-2">
+                                                {{ task.notes || 'No description provided.' }}
+                                            </p>
+                                            
+                                            <div class="flex justify-between items-center pt-2">
+                                                <div class="flex items-center gap-1">
+                                                    <UBadge :label="task.taskType" :color="getTaskColor(task.taskType)" variant="subtle" size="xs" />
+                                                </div>
+                                                <div class="flex items-center gap-1 text-muted text-xs">
+                                                    <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 shrink-0" />
+                                                    {{ formatDate(task.createdAt) }}
+                                                </div>
+                                            </div>
+                                        </UCard>
+                                    </div>
+                                </template>
+                                
+                                <Empty v-if="column.cards.length === 0" 
+                                    title="No tasks" 
+                                    description="Drop a task here" 
+                                    icon="i-lucide-inbox"
+                                    class="flex-1 py-4 bg-transparent border-0" 
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
 
             <!-- Data Table -->
             <UTable 
+                v-else
                 sticky 
                 :data="housekeepingStore.tasks" 
                 :columns="columns"
