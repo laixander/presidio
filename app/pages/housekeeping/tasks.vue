@@ -65,14 +65,16 @@ const handleFinishTask = (task: HousekeepingTask) => {
     housekeepingStore.setTaskStatus(task.id, 'Completed')
     
     // Automatically update the associated room if applicable
-    const room = roomsStore.rooms.find(r => r.id === task.roomId)
-    if (room) {
-        if (task.taskType === 'Cleaning' || task.taskType === 'Turn-down') {
-            roomsStore.updateRoom(room.id, { cleanStatus: 'Clean' })
-            logger.addLog(`Room ${room.number} automatically marked Clean via Task #${task.id}`, 'Task', 'success')
-        } else if (task.taskType === 'Maintenance') {
-            roomsStore.updateRoom(room.id, { condition: 'Normal' })
-            logger.addLog(`Room ${room.number} maintenance resolved via Task #${task.id}`, 'Task', 'success')
+    if (task.roomId) {
+        const room = roomsStore.rooms.find(r => r.id === task.roomId)
+        if (room) {
+            if (task.taskType === 'Cleaning' || task.taskType === 'Turn-down') {
+                roomsStore.updateRoom(room.id, { cleanStatus: 'Clean' })
+                logger.addLog(`Room ${room.number} automatically marked Clean via Task #${task.id}`, 'Task', 'success')
+            } else if (task.taskType === 'Maintenance') {
+                roomsStore.updateRoom(room.id, { condition: 'Normal' })
+                logger.addLog(`Room ${room.number} maintenance resolved via Task #${task.id}`, 'Task', 'success')
+            }
         }
     }
     
@@ -89,14 +91,26 @@ const columns: TableColumn<HousekeepingTask>[] = [
         cell: ({ row }) => h('span', { class: 'text-sm text-muted' }, `#${row.original.id}`)
     },
     {
-        id: 'room',
-        header: 'Room',
+        id: 'location',
+        header: 'Location',
         cell: ({ row }) => {
-            const room = roomsStore.rooms.find(r => r.id === row.original.roomId)
-            return h('div', { class: 'flex items-center gap-2 font-mono font-bold' }, [
-                room?.number || 'Unknown'
-            ])
+            if (row.original.roomId) {
+                const room = roomsStore.rooms.find(r => r.id === row.original.roomId)
+                return h('div', { class: 'flex items-center gap-2 font-mono font-bold' }, [
+                    `Room ${room?.number || 'Unknown'}`
+                ])
+            } else if (row.original.area) {
+                return h('div', { class: 'flex items-center gap-2 font-semibold text-primary' }, [
+                    row.original.area
+                ])
+            }
+            return h('span', { class: 'text-muted' }, 'Unknown')
         }
+    },
+    {
+        id: 'notes',
+        header: 'Notes',
+        cell: ({ row }) => h('span', { class: 'text-sm text-muted line-clamp-1 max-w-[150px]', title: row.original.notes || '' }, row.original.notes || '-')
     },
     {
         accessorKey: 'taskType',
@@ -176,7 +190,7 @@ const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(a
     <template v-else>
         <div class="flex-1 flex flex-col h-full">
             <!-- Dashboard Header & KPIs -->
-            <div class="p-4 sm:p-6 border-b border-default bg-neutral-50 dark:bg-neutral-900 shrink-0">
+            <div class="p-4 sm:p-6 border-b border-default shrink-0">
                 <h1 class="text-2xl font-bold mb-6">Task Queue</h1>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -29,7 +29,7 @@ export const useDemoSeeder = () => {
 
         // 1. Staff Users
         const systemRoles = ['Administrator', 'Front Desk', 'Billing', 'Housekeeping'] as const
-        const staffCount = Math.max(4, Math.floor(count / 5))
+        const staffCount = Math.max(12, Math.floor(count * 1.2))
         const generatedStaffUsers = Array.from({ length: staffCount }, (_, i) => ({
             id: i + 1,
             name: faker.person.fullName(),
@@ -157,14 +157,15 @@ export const useDemoSeeder = () => {
             }
         })
 
-        // 6. Housekeeping Tasks
+        // 6. Housekeeping Tasks & Assignments
         const taskTypes = ['Cleaning', 'Turn-down', 'Maintenance'] as const
         const taskStatuses = ['Pending', 'In Progress', 'Completed'] as const
         const taskCount = Math.max(1, Math.floor(count * 0.6))
+        const housekeepingStaff = generatedStaffUsers.filter(u => u.role === 'Housekeeping')
 
         const generatedTasks = Array.from({ length: taskCount }, (_, i) => {
             const room = faker.helpers.arrayElement(generatedRooms)
-            const staff = faker.datatype.boolean() ? faker.helpers.arrayElement(generatedStaffUsers) : null
+            const staff = faker.datatype.boolean() && housekeepingStaff.length > 0 ? faker.helpers.arrayElement(housekeepingStaff) : null
             const status = faker.helpers.arrayElement(taskStatuses)
 
             return {
@@ -175,6 +176,21 @@ export const useDemoSeeder = () => {
                 status: status,
                 createdAt: faker.date.recent().toISOString(),
                 completedAt: status === 'Completed' ? faker.date.recent().toISOString() : null
+            }
+        })
+        
+        const areas = ['Lobby', 'Pool', 'Gym', 'Restaurant', 'Hallways', 'Parking', 'Elevators', 'Other'] as const
+        const shifts = ['Morning', 'Afternoon', 'Night'] as const
+        const assignmentCount = Math.max(1, Math.floor(count * 0.3))
+        
+        const generatedAssignments = Array.from({ length: assignmentCount }, (_, i) => {
+            const staff = housekeepingStaff.length > 0 ? faker.helpers.arrayElement(housekeepingStaff) : faker.helpers.arrayElement(generatedStaffUsers)
+            return {
+                id: i + 1,
+                userId: staff.id,
+                area: faker.helpers.arrayElement(areas),
+                shift: faker.helpers.arrayElement(shifts),
+                date: faker.date.recent({ days: 3 }).toISOString().split('T')[0]
             }
         })
 
@@ -219,7 +235,7 @@ export const useDemoSeeder = () => {
         guestsStore.seed(generatedGuests as any[])
         reservationsStore.seed(generatedReservations as any[])
         foliosStore.seed(generatedFolios as any[], generatedCharges as any[], generatedPayments as any[])
-        housekeepingStore.seed(generatedTasks as any[])
+        housekeepingStore.seed(generatedTasks as any[], generatedAssignments as any[])
         groupsStore.seed(generatedGroups as any[], generatedBlocks as any[])
     }
 

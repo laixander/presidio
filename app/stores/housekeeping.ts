@@ -4,7 +4,7 @@
 // Manages housekeeping tasks, room status updates, and task assignments.
 
 import { defineStore } from 'pinia'
-import type { HousekeepingTask, TaskStatus } from '~/types'
+import type { HousekeepingTask, TaskStatus, StaffAssignment } from '~/types'
 
 const STORAGE_KEY = 'presidio-housekeeping'
 
@@ -13,6 +13,7 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
     // State
     // ============================================================================
     const tasks = ref<HousekeepingTask[]>([])
+    const assignments = ref<StaffAssignment[]>([])
     const isLoading = ref(false)
     const isHydrated = ref(false)
 
@@ -20,17 +21,25 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
     // Persistence
     // ============================================================================
 
-    const persist = () => {
-        if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks.value))
-        }
-    }
-
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
         const stored = localStorage.getItem(STORAGE_KEY)
-        if (stored) tasks.value = JSON.parse(stored)
+        if (stored) {
+            const data = JSON.parse(stored)
+            if (Array.isArray(data)) {
+                tasks.value = data // backward compatibility
+            } else {
+                tasks.value = data.tasks || []
+                assignments.value = data.assignments || []
+            }
+        }
         isHydrated.value = true
+    }
+
+    const persist = () => {
+        if (import.meta.client) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: tasks.value, assignments: assignments.value }))
+        }
     }
 
     // ============================================================================
@@ -60,6 +69,9 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
      */
     const getTasksForUser = (userId: number): HousekeepingTask[] =>
         tasks.value.filter(t => t.assignedTo === userId)
+        
+    const getAssignmentsForUser = (userId: number): StaffAssignment[] =>
+        assignments.value.filter(a => a.userId === userId)
 
     // ============================================================================
     // Actions
@@ -104,16 +116,31 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
         persist()
     }
 
+    const addAssignment = (data: Omit<StaffAssignment, 'id'>): StaffAssignment => {
+        const newId = assignments.value.length > 0 ? Math.max(...assignments.value.map(a => a.id)) + 1 : 1
+        const assignment: StaffAssignment = { id: newId, ...data }
+        assignments.value.push(assignment)
+        persist()
+        return assignment
+    }
+
+    const removeAssignment = (id: number) => {
+        assignments.value = assignments.value.filter(a => a.id !== id)
+        persist()
+    }
+
     /**
      * Bulk-set tasks (used by seeder).
      */
-    const seed = (newTasks: HousekeepingTask[]) => {
+    const seed = (newTasks: HousekeepingTask[], newAssignments: StaffAssignment[] = []) => {
         tasks.value = newTasks
+        assignments.value = newAssignments
         persist()
     }
 
     const clear = () => {
         tasks.value = []
+        assignments.value = []
         if (import.meta.client) {
             localStorage.removeItem(STORAGE_KEY)
         }
@@ -121,10 +148,10 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
 
     return {
         // State
-        tasks, isLoading, isHydrated,
+        tasks, assignments, isLoading, isHydrated,
         // Getters
-        pendingTasks, inProgressTasks, completedTasks, statusCounts, getTasksForRoom, getTasksForUser,
+        pendingTasks, inProgressTasks, completedTasks, statusCounts, getTasksForRoom, getTasksForUser, getAssignmentsForUser,
         // Actions
-        hydrate, addTask, updateTask, setTaskStatus, assignTask, deleteTask, seed, clear
+        hydrate, addTask, updateTask, setTaskStatus, assignTask, deleteTask, addAssignment, removeAssignment, seed, clear
     }
 })

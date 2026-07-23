@@ -212,15 +212,29 @@ export type TaskType = 'Cleaning' | 'Turn-down' | 'Maintenance'
 
 export type TaskStatus = 'Pending' | 'In Progress' | 'Completed'
 
+export type CommonArea = 'Lobby' | 'Pool' | 'Gym' | 'Restaurant' | 'Hallways' | 'Parking' | 'Elevators' | 'Other'
+
+export type StaffShift = 'Morning' | 'Afternoon' | 'Night'
+
+export interface StaffAssignment {
+  id: number
+  userId: number
+  area: CommonArea
+  shift: StaffShift
+  date: string
+}
+
 /**
- * Represents a housekeeping task assigned to a room.
+ * Represents a housekeeping task assigned to a room or common area.
  */
 export interface HousekeepingTask {
   id: number
-  roomId: number
+  roomId?: number | null
+  area?: string | null
   assignedTo: number | null
   taskType: TaskType
   status: TaskStatus
+  notes?: string
   createdAt: string
   completedAt: string | null
 }

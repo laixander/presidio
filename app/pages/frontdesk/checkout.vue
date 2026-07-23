@@ -168,7 +168,7 @@ const steps = [
 </script>
 
 <template>
-    <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6">
         <div class="mb-6 flex items-center gap-4">
             <UButton v-if="currentStep === 1" icon="i-lucide-arrow-left" color="neutral" variant="ghost"
                 @click="router.back()" />
