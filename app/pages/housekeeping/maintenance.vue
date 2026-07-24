@@ -3,14 +3,15 @@ import { h, ref, computed } from 'vue'
 import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import { UButton, UDropdownMenu, UBadge, UModal, UFormField, USelect, UInput, UTextarea } from '#components'
 import type { HousekeepingTask, TaskStatus, CommonArea, Room } from '~/types'
+import { size } from 'zod'
 
 definePageMeta({
     title: 'Maintenance Reporting',
     layout: 'dashboard',
     isTable: true,
-    headerActions: [
-        { label: 'Report Issue', icon: 'i-lucide-triangle-alert', event: 'openMaintenanceModal', color: 'error', variant: 'solid' }
-    ]
+    // headerActions: [
+    //     { label: 'Report Issue', icon: 'i-lucide-triangle-alert', event: 'openMaintenanceModal', size: 'sm', color: 'error', variant: 'solid' }
+    // ]
 })
 
 const events = useEvents()
@@ -61,7 +62,14 @@ const handleSave = () => {
     })
     
     if (formData.value.locationType === 'Room' && formData.value.roomId) {
-        roomsStore.updateRoom(formData.value.roomId, { condition: 'Maintenance' })
+        const room = roomsStore.rooms.find(r => r.id === formData.value.roomId)
+        if (room) {
+            const updates: Partial<Room> = { condition: 'Maintenance' }
+            if (room.cleanStatus === 'Clean' || room.cleanStatus === 'Inspected') {
+                updates.cleanStatus = 'Pickup'
+            }
+            roomsStore.updateRoom(formData.value.roomId, updates)
+        }
     }
     
     toast.success('Issue Reported', 'The maintenance issue has been logged.')
@@ -178,35 +186,111 @@ const columns: TableColumn<HousekeepingTask>[] = [
 
 const authStore = useDemoAuth()
 const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(authStore.currentRole.value ?? ''))
+
+const viewMode = ref<'list' | 'card'>('list')
+const globalFilter = ref('')
+const table = useTemplateRef('table')
+const columnVisibility = ref({
+    id: true
+})
+
+const filteredTasks = computed(() => {
+    if (!globalFilter.value) return maintenanceTasks.value
+    const search = globalFilter.value.toLowerCase()
+    return maintenanceTasks.value.filter(task => {
+        const roomMatch = task.roomId ? `room ${roomsStore.rooms.find((r: Room) => r.id === task.roomId)?.number}`.includes(search) : false
+        const areaMatch = task.area ? task.area.toLowerCase().includes(search) : false
+        const notesMatch = task.notes ? task.notes.toLowerCase().includes(search) : false
+        const statusMatch = task.status ? task.status.toLowerCase().includes(search) : false
+        return roomMatch || areaMatch || notesMatch || statusMatch
+    })
+})
 </script>
 
 <template>
     <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be Housekeeping staff or an Administrator to access Maintenance Reporting." icon="i-lucide-lock" />
 
     <template v-else>
-        <div class="flex-1 flex flex-col h-full">
-            <div class="p-4 sm:p-6 border-b border-default shrink-0">
-                <h1 class="text-2xl font-bold mb-2">Maintenance Reporting</h1>
-                <p class="text-muted">Track and report maintenance issues across rooms and common areas.</p>
+        <UPageCard title="Maintenance Reporting"
+            description="Track and report maintenance issues across rooms and common areas."
+            variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
+            <div class="flex justify-end gap-2 flex-1">
+                <TableGlobalFilter v-model="globalFilter" placeholder="Search guests..." />
+                <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
+                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
+                    v-model="viewMode" :content="false" size="xs" />
             </div>
-            
-            <UTable 
-                sticky 
-                :data="maintenanceTasks" 
-                :columns="columns"
-                :loading="housekeepingStore.isLoading" 
-                :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
-                class="flex-1 overflow-y-auto scrollbar"
-            >
-                <template #empty>
-                    <Empty 
-                        :loading="housekeepingStore.isLoading" 
-                        title="No maintenance tasks"
-                        description="There are currently no maintenance issues reported."
-                        icon="i-lucide-wrench" 
-                    />
-                </template>
-            </UTable>
+        </UPageCard>
+
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-triangle-alert" color="error" variant="soft" @click="events.emit('openMaintenanceModal')">
+                    Report Issue
+                </UButton>
+            </Teleport>
+        </ClientOnly>
+        
+        <UTable 
+            v-if="viewMode === 'list'"
+            ref="table"
+            sticky 
+            :data="maintenanceTasks" 
+            :columns="columns"
+            :loading="housekeepingStore.isLoading" 
+            v-model:global-filter="globalFilter"
+            v-model:column-visibility="columnVisibility"
+            :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
+            class="flex-1 overflow-y-auto scrollbar"
+        >
+            <template #empty>
+                <Empty 
+                    :loading="housekeepingStore.isLoading" 
+                    title="No maintenance tasks"
+                    description="There are currently no maintenance issues reported."
+                    icon="i-lucide-wrench" 
+                />
+            </template>
+        </UTable>
+
+        <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
+            <Empty v-if="!housekeepingStore.isLoading && !filteredTasks.length"
+                title="No maintenance tasks"
+                description="There are currently no maintenance issues reported."
+                icon="i-lucide-wrench" />
+
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <UCard v-for="task in filteredTasks" :key="task.id" variant="subtle"
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm flex flex-col">
+                    <template #header>
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold flex items-center gap-2">
+                                    <template v-if="task.roomId">Room {{ roomsStore.rooms.find((r: Room) => r.id === task.roomId)?.number || 'Unknown' }}</template>
+                                    <template v-else-if="task.area">{{ task.area }}</template>
+                                </h3>
+                                <p class="text-xs text-muted">ID: #{{ task.id }}</p>
+                            </div>
+                            <UBadge :color="getStatusColor(task.status)" variant="subtle" size="sm">{{ task.status }}</UBadge>
+                        </div>
+                    </template>
+
+                    <div class="flex-1 text-sm text-foreground whitespace-pre-wrap">
+                        {{ task.notes || 'No description provided.' }}
+                    </div>
+
+                    <template #footer>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-muted">
+                                {{ new Date(task.createdAt).toLocaleDateString() }}
+                            </span>
+                            <div class="flex gap-2">
+                                <UButton v-if="task.status === 'Pending'" size="xs" color="primary" variant="soft" icon="i-lucide-play" @click="handleStartTask(task)">Start</UButton>
+                                <UButton v-if="task.status === 'Pending' || task.status === 'In Progress'" size="xs" color="success" variant="soft" icon="i-lucide-check-circle" @click="handleFinishTask(task)">Complete</UButton>
+                            </div>
+                        </div>
+                    </template>
+                </UCard>
+            </div>
         </div>
 
         <UModal v-model:open="isModalOpen" title="Report Maintenance Issue" description="Log a new issue for a room or common area.">

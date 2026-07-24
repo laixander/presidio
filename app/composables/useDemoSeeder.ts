@@ -79,7 +79,7 @@ export const useDemoSeeder = () => {
                 rateOverride: null,
                 occupancyStatus: faker.helpers.arrayElement(occupancyStatuses),
                 cleanStatus: faker.helpers.arrayElement(cleanStatuses),
-                condition: faker.datatype.boolean({ probability: 0.1 }) ? 'Maintenance' : 'Normal'
+                condition: 'Normal'
             }
         })
 
@@ -167,13 +167,44 @@ export const useDemoSeeder = () => {
             const room = faker.helpers.arrayElement(generatedRooms)
             const staff = faker.datatype.boolean() && housekeepingStaff.length > 0 ? faker.helpers.arrayElement(housekeepingStaff) : null
             const status = faker.helpers.arrayElement(taskStatuses)
+            const taskType = faker.helpers.arrayElement(taskTypes)
+
+            if (taskType === 'Maintenance' && status !== 'Completed') {
+                room.condition = 'Maintenance'
+                if (room.cleanStatus === 'Clean' || room.cleanStatus === 'Inspected') {
+                    room.cleanStatus = 'Pickup'
+                }
+            }
+            let notes: string | null = null
+            if (taskType === 'Maintenance') {
+                const issues = [
+                    'Air conditioning not cooling',
+                    'Leaking sink faucet',
+                    'Broken lightbulb in bathroom',
+                    'TV remote not working',
+                    'Door lock sticking',
+                    'Wi-Fi router needs reset',
+                    'Shower drain clogged',
+                    'Mini-fridge not turning on'
+                ]
+                notes = faker.helpers.arrayElement(issues)
+            } else if (faker.datatype.boolean({ probability: 0.2 })) {
+                const generalNotes = [
+                    'Guest requested extra towels',
+                    'Please replace bath amenities',
+                    'Deep cleaning needed for carpet',
+                    'Spill on the bedsheets'
+                ]
+                notes = faker.helpers.arrayElement(generalNotes)
+            }
 
             return {
                 id: i + 1,
                 roomId: room.id,
                 assignedTo: staff ? staff.id : null,
-                taskType: faker.helpers.arrayElement(taskTypes),
+                taskType: taskType,
                 status: status,
+                notes: notes,
                 createdAt: faker.date.recent().toISOString(),
                 completedAt: status === 'Completed' ? faker.date.recent().toISOString() : null
             }

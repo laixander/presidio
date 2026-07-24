@@ -32,10 +32,15 @@ const updateCleanStatus = (status: CleanStatus) => {
 
 const toggleMaintenance = () => {
     const newCondition = props.room.condition === 'Maintenance' ? 'Normal' : 'Maintenance'
-    roomsStore.updateRoom(props.room.id, { condition: newCondition })
     if (newCondition === 'Maintenance') {
+        const updates: Partial<Room> = { condition: 'Maintenance' }
+        if (props.room.cleanStatus === 'Clean' || props.room.cleanStatus === 'Inspected') {
+            updates.cleanStatus = 'Pickup'
+        }
+        roomsStore.updateRoom(props.room.id, updates)
         toast.error('Maintenance Alert', `Room ${props.room.number} is now on Maintenance.`)
     } else {
+        roomsStore.updateRoom(props.room.id, { condition: 'Normal' })
         toast.success('Maintenance Resolved', `Room ${props.room.number} is back to Normal condition.`)
     }
 }
@@ -50,13 +55,29 @@ const toggleMaintenance = () => {
             room.cleanStatus === 'Dirty' ? 'ring-2 ring-warning-500/30' : 
             'hover:ring-2 hover:ring-primary-500/30'
         ]"
-        :ui="{ root: room.condition === 'Maintenance' ? 'overflow-visible' : '', body: 'p-4 sm:p-5' }"
+        :ui="{ root: (room.condition === 'Maintenance' || room.cleanStatus === 'Dirty' || room.cleanStatus === 'Pickup') ? 'overflow-visible' : '', body: 'p-4 sm:p-5' }"
     >
         <!-- Maintenance Alert Overlay -->
-        <div v-if="room.condition === 'Maintenance'" class="absolute -top-3 -right-3">
+        <div v-if="room.condition === 'Maintenance'" class="absolute -top-2 -right-2">
             <UTooltip text="Room out of order">
-                <div class="bg-error-500 text-white rounded-full p-1.5 shadow-md flex items-center justify-center animate-pulse">
+                <div class="bg-error-500 text-white rounded-full p-1 shadow-md flex items-center justify-center animate-pulse">
                     <UIcon name="i-lucide-wrench" class="size-4" />
+                </div>
+            </UTooltip>
+        </div>
+
+        <!-- Dirty/Pickup Alert Overlay -->
+        <div v-if="room.cleanStatus === 'Dirty' && room.condition === 'Normal'" class="absolute -top-2 -right-2">
+            <UTooltip text="Room needs cleaning">
+                <div class="bg-warning-500 text-white rounded-full p-1 shadow-md flex items-center justify-center animate-pulse">
+                    <UIcon name="i-lucide-trash-2" class="size-4" />
+                </div>
+            </UTooltip>
+        </div>
+        <div v-if="room.cleanStatus === 'Pickup' && room.condition === 'Normal'" class="absolute -top-2 -right-2">
+            <UTooltip text="Room needs pickup">
+                <div class="bg-warning-500 text-white rounded-full p-1 shadow-md flex items-center justify-center animate-pulse">
+                    <UIcon name="i-lucide-brush-cleaning" class="size-4" />
                 </div>
             </UTooltip>
         </div>
@@ -128,8 +149,8 @@ const toggleMaintenance = () => {
                 v-else-if="room.cleanStatus === 'Inspected' && room.condition === 'Normal'"
                 label="Make Dirty" 
                 icon="i-lucide-alert-circle" 
-                color="warning" 
-                variant="ghost" 
+                color="purple" 
+                variant="soft" 
                 size="sm"
                 block
                 @click="updateCleanStatus('Dirty')" 
@@ -145,7 +166,7 @@ const toggleMaintenance = () => {
                 label="Report" 
                 icon="i-lucide-wrench" 
                 color="neutral" 
-                variant="ghost" 
+                variant="soft" 
                 size="sm"
                 block
                 @click="toggleMaintenance" 

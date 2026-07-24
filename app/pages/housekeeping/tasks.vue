@@ -279,9 +279,9 @@ const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(a
             <div class="p-4 sm:p-6 border-b border-default shrink-0">
                 <h1 class="text-2xl font-bold mb-6">Task Queue</h1>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <StatCard 
-                        title="Pending Tasks" 
+                        title="To Clean" 
                         :value="housekeepingStore.statusCounts.pending" 
                         icon="i-lucide-clock" 
                         trend="Awaiting assignment/start"
@@ -297,12 +297,20 @@ const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(a
                         color="primary"
                     />
                     <StatCard 
-                        title="Completed Today" 
+                        title="Inspected" 
                         :value="housekeepingStore.statusCounts.completed" 
                         icon="i-lucide-check-circle-2" 
-                        trend="Great job!"
-                        trend-direction="up"
+                        trend="Ready for Guest"
+                        trend-direction="flat"
                         color="success"
+                    />
+                    <StatCard 
+                        title="Blocked" 
+                        :value="roomsStore.roomsByStatus.maintenance" 
+                        icon="i-lucide-triangle-alert" 
+                        trend="Needs maintenance"
+                        trend-direction="flat"
+                        color="error"
                     />
                 </div>
             </div>
@@ -315,20 +323,8 @@ const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(a
                 </div>
                 
                 <div class="flex gap-2">
-                    <UFieldGroup size="sm">
-                        <UButton 
-                            icon="i-lucide-layout-kanban" 
-                            :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
-                            :variant="viewMode === 'kanban' ? 'soft' : 'ghost'"
-                            @click="viewMode = 'kanban'"
-                        />
-                        <UButton 
-                            icon="i-lucide-list" 
-                            :color="viewMode === 'table' ? 'primary' : 'neutral'"
-                            :variant="viewMode === 'table' ? 'soft' : 'ghost'"
-                            @click="viewMode = 'table'"
-                        />
-                    </UFieldGroup>
+                    <UTabs :items="[{ icon: 'i-lucide-kanban', value: 'kanban' }, { icon: 'i-lucide-list', value: 'table' }]"
+                        v-model="viewMode" :content="false" size="xs" />
                 </div>
             </div>
 
