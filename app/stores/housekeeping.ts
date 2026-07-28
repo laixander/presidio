@@ -52,10 +52,13 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
 
     const completedTasks = computed(() => tasks.value.filter(t => t.status === 'Completed'))
 
+    const unassignedTasks = computed(() => tasks.value.filter(t => !t.assignedTo))
+
     const statusCounts = computed(() => ({
         pending: pendingTasks.value.length,
         inProgress: inProgressTasks.value.length,
-        completed: completedTasks.value.length
+        completed: completedTasks.value.length,
+        unassigned: unassignedTasks.value.length
     }))
 
     /**
@@ -82,6 +85,31 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
         const task: HousekeepingTask = { id: newId, ...data }
         tasks.value.push(task)
         persist()
+        
+        // Automatically update room condition based on the new task
+        if (task.roomId) {
+            const roomsStore = useRoomsStore()
+            const room = roomsStore.rooms.find(r => r.id === task.roomId)
+            if (room) {
+                const logger = useLogger('housekeeping')
+                if (task.taskType === 'Cleaning' || task.taskType === 'Turn-down') {
+                    if (room.cleanStatus === 'Clean' || room.cleanStatus === 'Inspected') {
+                        roomsStore.updateRoom(room.id, { cleanStatus: 'Dirty' })
+                        logger.addLog(`Room ${room.number} automatically marked Dirty due to new Task #${task.id}`, 'Task', 'info')
+                    }
+                } else if (task.taskType === 'Maintenance') {
+                    if (room.condition === 'Normal') {
+                        const updates: Partial<Room> = { condition: 'Maintenance' }
+                        if (room.cleanStatus === 'Clean' || room.cleanStatus === 'Inspected') {
+                            updates.cleanStatus = 'Pickup'
+                        }
+                        roomsStore.updateRoom(room.id, updates)
+                        logger.addLog(`Room ${room.number} placed on Maintenance due to new Task #${task.id}`, 'Task', 'info')
+                    }
+                }
+            }
+        }
+
         return task
     }
 
@@ -102,6 +130,30 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
             update.completedAt = new Date().toISOString()
         }
         updateTask(id, update)
+    }
+
+    const startTask = (task: HousekeepingTask) => {
+        setTaskStatus(task.id, 'In Progress')
+    }
+
+    const completeTask = (task: HousekeepingTask) => {
+        setTaskStatus(task.id, 'Completed')
+        
+        // Automatically update the associated room if applicable
+        if (task.roomId) {
+            const roomsStore = useRoomsStore()
+            const room = roomsStore.rooms.find(r => r.id === task.roomId)
+            if (room) {
+                const logger = useLogger('housekeeping')
+                if (task.taskType === 'Cleaning' || task.taskType === 'Turn-down') {
+                    roomsStore.updateRoom(room.id, { cleanStatus: 'Clean' })
+                    logger.addLog(`Room ${room.number} automatically marked Clean via Task #${task.id}`, 'Task', 'success')
+                } else if (task.taskType === 'Maintenance') {
+                    roomsStore.updateRoom(room.id, { condition: 'Normal' })
+                    logger.addLog(`Room ${room.number} maintenance resolved via Task #${task.id}`, 'Task', 'success')
+                }
+            }
+        }
     }
 
     /**
@@ -152,6 +204,6 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
         // Getters
         pendingTasks, inProgressTasks, completedTasks, statusCounts, getTasksForRoom, getTasksForUser, getAssignmentsForUser,
         // Actions
-        hydrate, addTask, updateTask, setTaskStatus, assignTask, deleteTask, addAssignment, removeAssignment, seed, clear
+        hydrate, addTask, updateTask, setTaskStatus, startTask, completeTask, assignTask, deleteTask, addAssignment, removeAssignment, seed, clear
     }
 })

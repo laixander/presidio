@@ -216,10 +216,16 @@ export const useDemoSeeder = () => {
         
         const generatedAssignments = Array.from({ length: assignmentCount }, (_, i) => {
             const staff = housekeepingStaff.length > 0 ? faker.helpers.arrayElement(housekeepingStaff) : faker.helpers.arrayElement(generatedStaffUsers)
+            const isFloor = faker.datatype.boolean()
+            const maxFloor = generatedRooms.reduce((max, r) => Math.max(max, r.floor), 1)
+            const floor = isFloor ? faker.number.int({ min: 1, max: maxFloor }) : undefined
+            const area = isFloor ? undefined : faker.helpers.arrayElement(areas)
             return {
                 id: i + 1,
                 userId: staff.id,
-                area: faker.helpers.arrayElement(areas),
+                locationType: isFloor ? 'Floor' : 'Common Area',
+                area: area,
+                floor: floor,
                 shift: faker.helpers.arrayElement(shifts),
                 date: faker.date.recent({ days: 3 }).toISOString().split('T')[0]
             }

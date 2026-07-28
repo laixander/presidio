@@ -216,10 +216,14 @@ export type CommonArea = 'Lobby' | 'Pool' | 'Gym' | 'Restaurant' | 'Hallways' | 
 
 export type StaffShift = 'Morning' | 'Afternoon' | 'Night'
 
+export type AssignmentLocationType = 'Common Area' | 'Floor'
+
 export interface StaffAssignment {
   id: number
   userId: number
-  area: CommonArea
+  locationType: AssignmentLocationType
+  area?: CommonArea
+  floor?: number
   shift: StaffShift
   date: string
 }

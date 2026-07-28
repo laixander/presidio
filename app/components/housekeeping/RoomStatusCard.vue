@@ -8,7 +8,10 @@ const props = defineProps<{
 }>()
 
 const roomsStore = useRoomsStore()
+const housekeepingStore = useHousekeepingStore()
 const toast = useAppToast()
+
+const activeTasksCount = computed(() => housekeepingStore.getTasksForRoom(props.room.id).filter(t => t.status !== 'Completed').length)
 
 const getCleanColor = (status: CleanStatus) => {
     switch (status) {
@@ -102,85 +105,17 @@ const toggleMaintenance = () => {
         </div>
 
         <!-- Status Badges -->
-        <div class="flex flex-wrap gap-2 mb-6">
+        <div class="flex flex-wrap gap-2">
             <UBadge :color="getCleanColor(room.cleanStatus)" variant="subtle" size="sm" class="flex items-center gap-1">
                 <UIcon :name="room.cleanStatus === 'Clean' || room.cleanStatus === 'Inspected' ? 'i-lucide-sparkles' : 'i-lucide-trash-2'" class="size-3" />
                 {{ room.cleanStatus }}
             </UBadge>
+            
+            <UBadge v-if="activeTasksCount > 0" color="neutral" variant="soft" size="sm" class="flex items-center gap-1 font-mono">
+                <UIcon name="i-lucide-clipboard-list" class="size-3" />
+                {{ activeTasksCount }} Task{{ activeTasksCount !== 1 ? 's' : '' }}
+            </UBadge>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="grid grid-cols-2 gap-2 mt-auto">
-            <!-- Dynamic primary action based on clean status -->
-            <UButton 
-                v-if="room.cleanStatus === 'Dirty' && room.condition === 'Normal'"
-                label="Mark Clean" 
-                icon="i-lucide-check-circle-2" 
-                color="success" 
-                variant="soft" 
-                size="sm"
-                block
-                @click="updateCleanStatus('Clean')" 
-            />
-            
-            <UButton 
-                v-else-if="room.cleanStatus === 'Clean' && room.condition === 'Normal'"
-                label="Inspect" 
-                icon="i-lucide-search" 
-                color="primary" 
-                variant="soft" 
-                size="sm"
-                block
-                @click="updateCleanStatus('Inspected')" 
-            />
-            
-            <UButton 
-                v-else-if="room.cleanStatus === 'Pickup' && room.condition === 'Normal'"
-                label="Finish Pickup" 
-                icon="i-lucide-brush-cleaning" 
-                color="success" 
-                variant="soft" 
-                size="sm"
-                block
-                @click="updateCleanStatus('Clean')" 
-            />
-            
-            <UButton 
-                v-else-if="room.cleanStatus === 'Inspected' && room.condition === 'Normal'"
-                label="Make Dirty" 
-                icon="i-lucide-alert-circle" 
-                color="purple" 
-                variant="soft" 
-                size="sm"
-                block
-                @click="updateCleanStatus('Dirty')" 
-            />
-            
-            <div v-else-if="room.condition === 'Maintenance'" class="col-span-1 text-xs text-error-600 font-medium flex items-center justify-center">
-                Out of Order
-            </div>
-
-            <!-- Maintenance Toggle Action -->
-            <UButton 
-                v-if="room.condition === 'Normal'"
-                label="Report" 
-                icon="i-lucide-wrench" 
-                color="neutral" 
-                variant="soft" 
-                size="sm"
-                block
-                @click="toggleMaintenance" 
-            />
-            <UButton 
-                v-else
-                label="Resolve" 
-                icon="i-lucide-check" 
-                color="success" 
-                variant="solid" 
-                size="sm"
-                block
-                @click="toggleMaintenance" 
-            />
-        </div>
     </UCard>
 </template>

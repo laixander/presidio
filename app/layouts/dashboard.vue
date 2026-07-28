@@ -57,8 +57,7 @@ const allItems: NavigationMenuItem[][] = [
         { type: 'label', label: 'Housekeeping' },
         { label: 'Housekeeping', icon: 'i-lucide-spray-can', to: '/housekeeping' },
         { label: 'Tasks Queue', icon: 'i-lucide-list-todo', to: '/housekeeping/tasks' },
-        { label: 'Assignments', icon: 'i-lucide-users-round', to: '/housekeeping/assignments' },
-        { label: 'Maintenance', icon: 'i-lucide-wrench', to: '/housekeeping/maintenance' }
+        { label: 'Assignments', icon: 'i-lucide-users-round', to: '/housekeeping/assignments' }
     ]
 ]
 
