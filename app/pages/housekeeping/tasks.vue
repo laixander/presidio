@@ -8,17 +8,17 @@
 import { h, computed, ref } from 'vue'
 import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import { UButton, UDropdownMenu, UBadge, UFieldGroup, UChip, UCard, UModal, UFormField, USelect, URadioGroup, UTextarea } from '#components'
-
+import NewTaskModal from '~/components/housekeeping/NewTaskModal.vue'
 import type { HousekeepingTask, TaskStatus, TaskType } from '~/types'
 
 definePageMeta({
     title: 'Housekeeping Tasks',
     layout: 'dashboard',
     isTable: true,
-    headerActions: [
-        { label: 'New Task', icon: 'i-lucide-plus', event: 'openTaskModal', color: 'primary', variant: 'solid' },
-        { label: 'Live Dashboard', icon: 'i-lucide-layout-dashboard', event: 'goDashboard', color: 'neutral', variant: 'soft' }
-    ]
+    // headerActions: [
+    //     { label: 'New Task', icon: 'i-lucide-plus', event: 'openTaskModal', color: 'primary', variant: 'solid' },
+    //     { label: 'Live Dashboard', icon: 'i-lucide-layout-dashboard', event: 'goDashboard', color: 'neutral', variant: 'soft' }
+    // ]
 })
 
 const router = useRouter()
@@ -195,6 +195,14 @@ const isAuthorized = computed(() => ['Administrator', 'Housekeeping'].includes(a
             description="Manage the housekeeping task queue."
             variant="naked" orientation="horizontal" class="rounded-none p-4 sm:p-6">
         </UPageCard>
+
+        <ClientOnly>
+            <Teleport to="#header-actions-teleport">
+                <UButton icon="i-lucide-plus" color="primary" variant="solid" @click="events.emit('openTaskModal')">
+                    New Task
+                </UButton>
+            </Teleport>
+        </ClientOnly>
 
         <!-- Dashboard Header & KPIs -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4 sm:px-6">
