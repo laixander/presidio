@@ -9,10 +9,7 @@ import { ref, reactive, computed } from 'vue'
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
-definePageMeta({
-    title: 'New Group Booking',
-    layout: 'dashboard'
-})
+const isOpen = defineModel<boolean>('open', { default: false })
 
 const router = useRouter()
 const guestsStore = useGuestsStore()
@@ -79,21 +76,23 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
     logger.addLog(`Created group booking ${group.groupName}`, 'Created', 'success')
     toast.success('Group Created', `Group booking for ${group.groupName} has been successfully created.`)
     
+    isOpen.value = false
     router.push(`/frontdesk/groups/${group.id}`)
 }
 </script>
 
 <template>
-    <div class="max-w-3xl mx-auto py-6 px-4 sm:px-6">
-        <div class="mb-6 flex items-center gap-4">
-            <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="router.back()" />
-            <div>
-                <h1 class="text-2xl font-bold">New Group Booking</h1>
-                <p class="text-muted">Create a new corporate or event block.</p>
+    <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-3xl' }">
+        <template #header>
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">New Group Booking</h1>
+                    <p class="text-muted">Create a new corporate or event block.</p>
+                </div>
             </div>
-        </div>
-
-        <UCard variant="subtle" class="shadow-sm">
+        </template>
+        
+        <template #body>
             <UForm :schema="schema" :state="state" class="space-y-6" @submit="handleSubmit">
                 
                 <!-- Group Details -->
@@ -159,10 +158,10 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
                 </div>
 
                 <div class="pt-6 flex justify-end gap-3">
-                    <UButton label="Cancel" color="neutral" variant="ghost" @click="router.push('/frontdesk/groups')" />
+                    <UButton label="Cancel" color="neutral" variant="ghost" @click="isOpen = false" />
                     <UButton type="submit" label="Create Group" color="primary" size="lg" icon="i-lucide-check" />
                 </div>
             </UForm>
-        </UCard>
-    </div>
+        </template>
+    </UModal>
 </template>

@@ -25,8 +25,10 @@ const guestsStore = useGuestsStore()
 const router = useRouter()
 const events = useEvents()
 
+const isNewGroupModalOpen = ref(false)
+
 events.on('newGroupBooking', () => {
-    router.push('/frontdesk/groups/new')
+    isNewGroupModalOpen.value = true
 })
 
 // ============================================================================
@@ -158,10 +160,6 @@ const getContactName = (res: GroupReservation) => {
 </script>
 
 <template>
-    <AuthGate v-if="!isAuthorized" title="Access Denied"
-        description="You must be Front Desk staff or an Administrator to access Group Bookings." icon="i-lucide-lock" />
-
-    <template v-else>
         <UPageCard title="Group Bookings" description="Manage corporate bookings, events, and room blocks."
             variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
             <div class="flex justify-end gap-2 flex-1">
@@ -270,5 +268,6 @@ const getContactName = (res: GroupReservation) => {
             description="This will cancel the group booking and release all associated pending room blocks. Confirmed reservations will not be affected. This action cannot be undone."
             confirm-label="Yes, Cancel Group" cancel-label="No, Keep It" confirm-color="error"
             @confirm="confirmCancel" />
-    </template>
+            
+        <NewGroupBookingModal v-model:open="isNewGroupModalOpen" />
 </template>

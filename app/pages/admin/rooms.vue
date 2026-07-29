@@ -11,6 +11,8 @@ import type { Room } from '~/types'
 import RoomModal from '~/components/RoomModal.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
 import StatusBadge from '~/components/StatusBadge.vue'
+import AdminFloorPlan from '~/components/admin/AdminFloorPlan.vue'
+import RoomDetailsDrawer from '~/components/RoomDetailsDrawer.vue'
 
 // ============================================================================
 // Page Configuration
@@ -39,6 +41,8 @@ const confirmModal = overlay.create(ConfirmationModal)
 
 const isAddRoomOpen = ref(false)
 const isDrawerOpen = ref(false)
+const isDetailsDrawerOpen = ref(false)
+const selectedRoom = ref<Room | null>(null)
 
 // ============================================================================
 // Event Listeners
@@ -93,6 +97,11 @@ function handleDeleteRoom(room: Room) {
             toast.success('Room Deleted', `Room ${room.number} has been removed.`)
         }
     })
+}
+
+function handleViewDetails(room: Room) {
+    selectedRoom.value = room
+    isDetailsDrawerOpen.value = true
 }
 
 // ============================================================================
@@ -174,6 +183,11 @@ const columns: TableColumn<Room>[] = [
             const items: DropdownMenuItem[][] = [
                 [
                     {
+                        label: 'View Details',
+                        icon: 'i-lucide-eye',
+                        onSelect: () => handleViewDetails(row.original)
+                    },
+                    {
                         label: 'Edit',
                         icon: 'i-lucide-edit',
                         onSelect: () => handleEditRoom(row.original)
@@ -210,7 +224,7 @@ const globalFilter = ref('')
 const columnVisibility = ref({
     id: false
 })
-const viewMode = ref<'list' | 'card'>('list')
+const viewMode = ref<'list' | 'card' | 'floorplan'>('list')
 const authStore = useDemoAuth()
 
 const filteredRooms = computed(() => {
@@ -242,7 +256,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
             <div class="flex justify-end gap-2 flex-1">
                 <TableGlobalFilter v-model="globalFilter" />
                 <TableColumnToggle v-if="viewMode === 'list'" :table="table" />
-                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }]"
+                <UTabs :items="[{ icon: 'i-lucide-grid-3x3', value: 'card' }, { icon: 'i-lucide-list', value: 'list' }, { icon: 'i-lucide-bed-double', value: 'floorplan' }]"
                     v-model="viewMode" :content="false" size="xs" />
             </div>
         </UPageCard>
@@ -273,7 +287,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         </UTable>
 
         <!-- Card grid view -->
-        <div v-else class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
+        <div v-else-if="viewMode === 'card'" class="flex-1 overflow-y-auto scrollbar p-4 sm:p-6">
             <Empty v-if="!roomsStore.isLoading && !filteredRooms.length" title="No rooms found"
                 description="There are currently no rooms to display. Add a new room to get started."
                 icon="i-lucide-bed-double">
@@ -294,6 +308,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
                                 <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
                             </div>
                             <UDropdownMenu :items="[[
+                                { label: 'View Details', icon: 'i-lucide-eye', onSelect: () => handleViewDetails(room) },
                                 { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditRoom(room) }
                             ], [
                                 { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteRoom(room) }
@@ -331,7 +346,11 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
             </div>
         </div>
 
+        <!-- Floor Plan view -->
+        <AdminFloorPlan v-else-if="viewMode === 'floorplan'" :rooms="filteredRooms" @edit="handleEditRoom" @delete="handleDeleteRoom" @select="handleViewDetails" />
+
         <RoomModal v-model:open="isAddRoomOpen" @submit="handleAddRoom" />
+        <RoomDetailsDrawer v-model:open="isDetailsDrawerOpen" :room="selectedRoom" />
 
         <!-- ================================================================ -->
         <!-- Logs Drawer                                                       -->

@@ -10,7 +10,8 @@ import { ref, computed } from 'vue'
 import type { CleanStatus, Room } from '~/types'
 import RoomStatusCard from '~/components/housekeeping/RoomStatusCard.vue'
 import NewTaskModal from '~/components/housekeeping/NewTaskModal.vue'
-import { USlideover, UButton, UBadge, UIcon } from '#components'
+import RoomDetailsDrawer from '~/components/housekeeping/RoomDetailsDrawer.vue'
+import { UButton, UBadge, UIcon } from '#components'
 
 definePageMeta({
     title: 'Housekeeping',
@@ -19,42 +20,13 @@ definePageMeta({
 })
 
 const roomsStore = useRoomsStore()
-const housekeepingStore = useHousekeepingStore()
-const toast = useAppToast()
 
-const isSlideoverOpen = ref(false)
+const isDrawerOpen = ref(false)
 const selectedRoom = ref<Room | null>(null)
-
-const selectedRoomTasks = computed(() => {
-    if (!selectedRoom.value) return []
-    return housekeepingStore.getTasksForRoom(selectedRoom.value.id)
-})
 
 const openRoomDetails = (room: Room) => {
     selectedRoom.value = room
-    isSlideoverOpen.value = true
-}
-
-const updateCleanStatus = (status: CleanStatus) => {
-    if (!selectedRoom.value) return
-    roomsStore.updateRoom(selectedRoom.value.id, { cleanStatus: status })
-    toast.success('Room Updated', `Room ${selectedRoom.value.number} marked as ${status}.`)
-}
-
-const toggleMaintenance = () => {
-    if (!selectedRoom.value) return
-    const newCondition = selectedRoom.value.condition === 'Maintenance' ? 'Normal' : 'Maintenance'
-    if (newCondition === 'Maintenance') {
-        const updates: Partial<Room> = { condition: 'Maintenance' }
-        if (selectedRoom.value.cleanStatus === 'Clean' || selectedRoom.value.cleanStatus === 'Inspected') {
-            updates.cleanStatus = 'Pickup'
-        }
-        roomsStore.updateRoom(selectedRoom.value.id, updates)
-        toast.error('Maintenance Alert', `Room ${selectedRoom.value.number} is now on Maintenance.`)
-    } else {
-        roomsStore.updateRoom(selectedRoom.value.id, { condition: 'Normal', cleanStatus: 'Pickup' })
-        toast.success('Maintenance Resolved', `Room ${selectedRoom.value.number} is back to Normal condition and needs Pickup.`)
-    }
+    isDrawerOpen.value = true
 }
 
 // Total dirty rooms (Vacant or Occupied)
@@ -313,165 +285,11 @@ const isNewTaskModalOpen = ref(false)
             </div>
         </template>
 
-        <USlideover v-model:open="isSlideoverOpen">
-            <template #header v-if="selectedRoom">
-                <div>
-                    <h2 class="text-2xl font-bold font-mono tracking-tight flex items-center gap-2">
-                        Room {{ selectedRoom.number }}
-                    </h2>
-                    <p class="text-muted text-sm uppercase tracking-widest mt-1">Floor {{ selectedRoom.floor }}</p>
-                </div>
-            </template>
-
-            <template #body v-if="selectedRoom">
-                <div class="space-y-8">
-                    <!-- Status Section -->
-                    <section>
-                        <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Current Status</h3>
-                        <div class="flex flex-wrap gap-2">
-                            <UBadge :color="selectedRoom.occupancyStatus === 'Occupied' ? 'primary' : 'neutral'" variant="soft">
-                                {{ selectedRoom.occupancyStatus }}
-                            </UBadge>
-                            <UBadge :color="selectedRoom.cleanStatus === 'Clean' || selectedRoom.cleanStatus === 'Inspected' ? 'success' : (selectedRoom.cleanStatus === 'Pickup' ? 'warning' : 'error')" variant="soft">
-                                {{ selectedRoom.cleanStatus }}
-                            </UBadge>
-                            <UBadge v-if="selectedRoom.condition === 'Maintenance'" color="error" variant="soft">
-                                Maintenance
-                            </UBadge>
-                        </div>
-                    </section>
-
-                    <!-- Quick Actions Section -->
-                    <section>
-                        <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Quick Actions</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <UButton 
-                                v-if="selectedRoom.cleanStatus === 'Dirty' && selectedRoom.condition === 'Normal'"
-                                label="Mark Clean" 
-                                icon="i-lucide-sparkles" 
-                                color="success" 
-                                variant="soft" 
-                                size="sm"
-                                block
-                                @click.stop="updateCleanStatus('Clean')" 
-                            />
-                            
-                            <UButton 
-                                v-else-if="selectedRoom.cleanStatus === 'Pickup' && selectedRoom.condition === 'Normal'"
-                                label="Complete Pickup" 
-                                icon="i-lucide-check-circle" 
-                                color="primary" 
-                                variant="soft" 
-                                size="sm"
-                                block
-                                @click.stop="updateCleanStatus('Clean')" 
-                            />
-                            
-                            <UButton 
-                                v-else-if="selectedRoom.cleanStatus === 'Clean' && selectedRoom.condition === 'Normal'"
-                                label="Mark Inspected" 
-                                icon="i-lucide-check-square" 
-                                color="success" 
-                                variant="solid" 
-                                size="sm"
-                                block
-                                @click.stop="updateCleanStatus('Inspected')" 
-                            />
-                            
-                            <UButton 
-                                v-else-if="selectedRoom.cleanStatus === 'Inspected' && selectedRoom.condition === 'Normal'"
-                                label="Make Dirty" 
-                                icon="i-lucide-alert-circle" 
-                                color="purple" 
-                                variant="soft" 
-                                size="sm"
-                                block
-                                @click.stop="updateCleanStatus('Dirty')" 
-                            />
-                            
-                            <UButton 
-                                v-else-if="selectedRoom.condition === 'Maintenance'"
-                                label="Out of Order" 
-                                icon="i-lucide-ban" 
-                                color="error" 
-                                variant="soft" 
-                                size="sm"
-                                block
-                                disabled
-                            />
-
-                            <!-- Maintenance Toggle Action -->
-                            <UButton 
-                                v-if="selectedRoom.condition === 'Normal'"
-                                label="Report" 
-                                icon="i-lucide-wrench" 
-                                color="neutral" 
-                                variant="soft" 
-                                size="sm"
-                                block
-                                @click.stop="toggleMaintenance" 
-                            />
-                            <UButton 
-                                v-else
-                                label="Resolve" 
-                                icon="i-lucide-check" 
-                                color="success" 
-                                variant="solid" 
-                                size="sm"
-                                block
-                                @click.stop="toggleMaintenance" 
-                            />
-                        </div>
-                    </section>
-
-                    <!-- Tasks Section -->
-                    <section>
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-sm font-semibold text-muted uppercase tracking-wider">Housekeeping Tasks</h3>
-                                <UBadge color="neutral" variant="subtle" size="sm" class="font-mono">{{ selectedRoomTasks.length }}</UBadge>
-                            </div>
-                            <UButton size="xs" icon="i-lucide-plus" color="primary" variant="soft" @click="isNewTaskModalOpen = true">New Task</UButton>
-                        </div>
-
-                        <div v-if="selectedRoomTasks.length > 0" class="space-y-3">
-                            <div v-for="task in selectedRoomTasks" :key="task.id" class="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-default space-y-2">
-                                <div class="flex justify-between items-start">
-                                    <span class="font-medium text-sm">{{ task.taskType }}</span>
-                                    <UBadge :color="task.status === 'Completed' ? 'success' : (task.status === 'In Progress' ? 'warning' : 'neutral')" variant="subtle" size="sm">
-                                        {{ task.status }}
-                                    </UBadge>
-                                </div>
-                                <p v-if="task.notes" class="text-sm text-muted">{{ task.notes }}</p>
-                                
-                                <div class="flex gap-2 pt-2" v-if="task.status !== 'Completed'">
-                                    <UButton 
-                                        v-if="task.status === 'Pending'"
-                                        label="Start" 
-                                        size="xs" 
-                                        color="primary" 
-                                        variant="soft" 
-                                        icon="i-lucide-play" 
-                                        @click="housekeepingStore.startTask(task)" 
-                                    />
-                                    <UButton 
-                                        label="Complete" 
-                                        size="xs" 
-                                        color="success" 
-                                        variant="soft" 
-                                        icon="i-lucide-check-circle" 
-                                        @click="housekeepingStore.completeTask(task)" 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="text-sm text-muted italic bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg text-center border border-default">
-                            No tasks assigned to this room.
-                        </div>
-                    </section>
-                </div>
-            </template>
-        </USlideover>
+        <RoomDetailsDrawer 
+            v-model:open="isDrawerOpen" 
+            :room="selectedRoom" 
+            @new-task="isNewTaskModalOpen = true" 
+        />
 
         <NewTaskModal v-model="isNewTaskModalOpen" :preselected-room-id="selectedRoom?.id" />
     </template>

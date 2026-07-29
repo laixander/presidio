@@ -11,10 +11,7 @@ import { ref, reactive, onMounted } from 'vue'
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
-definePageMeta({
-    title: 'New Reservation',
-    layout: 'dashboard'
-})
+const isOpen = defineModel<boolean>('open', { default: false })
 
 const route = useRoute()
 const router = useRouter()
@@ -63,11 +60,13 @@ const state = reactive({
     status: 'Confirmed' as const
 })
 
-onMounted(() => {
-    // Pre-fill from query params if coming from Search page
-    if (route.query.checkIn) state.checkInDate = route.query.checkIn as string
-    if (route.query.checkOut) state.checkOutDate = route.query.checkOut as string
-    if (route.query.roomTypeId) state.roomTypeId = parseInt(route.query.roomTypeId as string, 10)
+// Watch for modal opening to pre-fill from query params if available
+watch(() => isOpen.value, (newVal) => {
+    if (newVal && Object.keys(route.query).length > 0) {
+        if (route.query.checkInDate) state.checkInDate = route.query.checkInDate as string
+        if (route.query.checkOutDate) state.checkOutDate = route.query.checkOutDate as string
+        if (route.query.roomTypeId) state.roomTypeId = parseInt(route.query.roomTypeId as string, 10)
+    }
 })
 
 watch(() => state.guestIds, (newIds) => {
@@ -99,21 +98,22 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
     logger.addLog(`Created reservation ${reservation.bookingRef}`, 'Created', 'success')
     toast.success('Reservation Created', `Booking ${reservation.bookingRef} has been successfully created.`)
     
-    router.push('/frontdesk/bookings')
+    isOpen.value = false
 }
 </script>
 
 <template>
-    <div class="max-w-3xl mx-auto py-6 px-4 sm:px-6">
-        <div class="mb-6 flex items-center gap-4">
-            <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="router.back()" />
-            <div>
-                <h1 class="text-2xl font-bold">New Reservation</h1>
-                <p class="text-muted">Create a new guest booking.</p>
+    <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-3xl' }">
+        <template #header>
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">New Reservation</h1>
+                    <p class="text-muted">Create a new guest booking.</p>
+                </div>
             </div>
-        </div>
-
-        <UCard variant="subtle" class="shadow-sm">
+        </template>
+        
+        <template #body>
             <UForm :schema="schema" :state="state" class="space-y-6" @submit="handleSubmit">
                 
                 <!-- Guest Selection -->
@@ -164,10 +164,10 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
                 </div>
 
                 <div class="pt-6 flex justify-end gap-3">
-                    <UButton label="Cancel" color="neutral" variant="ghost" @click="router.push('/frontdesk/bookings')" />
+                    <UButton label="Cancel" color="neutral" variant="ghost" @click="isOpen = false" />
                     <UButton type="submit" label="Create Reservation" color="primary" size="lg" icon="i-lucide-check" />
                 </div>
             </UForm>
-        </UCard>
-    </div>
+        </template>
+    </UModal>
 </template>

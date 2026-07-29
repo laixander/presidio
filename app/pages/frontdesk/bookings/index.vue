@@ -32,14 +32,23 @@ const router = useRouter()
 const events = useEvents()
 
 const isDrawerOpen = ref(false)
+const isDetailsDrawerOpen = ref(false)
+const selectedReservation = ref<Reservation | null>(null)
+
+const isNewBookingModalOpen = ref(false)
 
 events.on('newBooking', () => {
-    router.push('/frontdesk/bookings/new')
+    isNewBookingModalOpen.value = true
 })
 
 events.on('viewReservationLogs', () => {
     isDrawerOpen.value = true
 })
+
+const openReservationDetails = (res: Reservation) => {
+    selectedReservation.value = res
+    isDetailsDrawerOpen.value = true
+}
 
 // ============================================================================
 // Table Configuration
@@ -85,55 +94,6 @@ const columns: TableColumn<Reservation>[] = [
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => h(StatusBadge, { status: row.original.status })
-    },
-    {
-        id: 'actions',
-        meta: { class: { td: 'text-right' } },
-        cell: ({ row }) => {
-            const res = row.original
-
-            // Build the contextual action menu for each reservation row
-            const group: DropdownMenuItem[] = [
-                {
-                    label: 'View Details',
-                    icon: 'i-lucide-eye',
-                    onSelect: () => router.push(`/frontdesk/bookings/${res.id}`)
-                }
-            ]
-
-            // Only show Check-In if the guest hasn't arrived yet
-            if (res.status === 'Pending' || res.status === 'Confirmed') {
-                group.push({
-                    label: 'Check-In',
-                    icon: 'i-lucide-log-in',
-                    color: 'primary',
-                    onSelect: () => router.push(`/frontdesk/checkin?id=${res.id}`)
-                })
-            }
-            if (res.status === 'In-House') {
-                group.push({
-                    label: 'Check-Out',
-                    icon: 'i-lucide-log-out',
-                    color: 'error',
-                    onSelect: () => router.push(`/frontdesk/checkout?id=${res.id}`)
-                })
-            }
-
-            const items: DropdownMenuItem[][] = [group]
-
-            return h(UDropdownMenu, {
-                items,
-                content: { align: 'end' },
-                size: 'sm'
-            }, {
-                default: () => h(UButton, {
-                    icon: 'i-lucide-ellipsis-vertical',
-                    color: 'neutral',
-                    variant: 'ghost',
-                    size: 'sm'
-                })
-            })
-        }
     }
 ]
 
@@ -168,10 +128,7 @@ const getPrimaryGuest = (res: Reservation) => {
 </script>
 
 <template>
-    <AuthGate v-if="!isAuthorized" title="Access Denied"
-        description="You must be Front Desk staff or an Administrator to access Reservations." icon="i-lucide-lock" />
 
-    <template v-else>
         <UPageCard title="Reservations" description="Manage all guest bookings, arrivals, and departures."
             variant="naked" orientation="horizontal" class="border-b border-default rounded-none p-4 sm:p-6">
             <div class="flex justify-end gap-2 flex-1">
@@ -192,7 +149,7 @@ const getPrimaryGuest = (res: Reservation) => {
 
         <UTable v-if="viewMode === 'list'" sticky ref="table" :data="reservationsStore.reservations" :columns="columns"
             :loading="reservationsStore.isLoading" v-model:column-visibility="columnVisibility"
-            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6', tr: 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50' }" @select="(e, row) => openReservationDetails(row.original)" class="flex-1 scrollbar">
             <template #empty>
                 <Empty :loading="reservationsStore.isLoading" title="No reservations found"
                     description="There are currently no reservations to display. Create a new reservation to get started."
@@ -219,7 +176,8 @@ const getPrimaryGuest = (res: Reservation) => {
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <UCard v-for="res in filteredReservations" :key="res.id" variant="subtle"
-                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm flex flex-col h-full"
+                    @click="openReservationDetails(res)"
+                    class="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm flex flex-col h-full"
                     :ui="{ body: 'flex-1', header: 'flex items-start justify-between gap-2' }">
                     <template #header>
                         <div class="w-full overflow-hidden space-y-1">
@@ -228,17 +186,6 @@ const getPrimaryGuest = (res: Reservation) => {
                             <StatusBadge :status="res.status" class="mt-1" />
                         </div>
 
-                        <UDropdownMenu :items="[
-                            [
-                                { label: 'View Details', icon: 'i-lucide-eye', onSelect: () => router.push(`/frontdesk/bookings/${res.id}`) }
-                            ],
-                            [
-                                ...(res.status === 'Pending' || res.status === 'Confirmed' ? [{ label: 'Check-In', icon: 'i-lucide-log-in', color: 'primary' as const, onSelect: () => router.push(`/frontdesk/checkin?id=${res.id}`) }] : []),
-                                ...(res.status === 'In-House' ? [{ label: 'Check-Out', icon: 'i-lucide-log-out', color: 'error' as const, onSelect: () => router.push(`/frontdesk/checkout?id=${res.id}`) }] : [])
-                            ]
-                        ]" :content="{ align: 'end' }" size="sm">
-                            <UButton icon="i-lucide-more-vertical" color="neutral" variant="ghost" size="sm" />
-                        </UDropdownMenu>
                     </template>
 
                     <div class="space-y-4">
@@ -285,5 +232,7 @@ const getPrimaryGuest = (res: Reservation) => {
         <!-- Logs Drawer                                                       -->
         <!-- ================================================================ -->
         <LogsDrawer v-model:open="isDrawerOpen" namespace="reservations" />
-    </template>
+
+        <ReservationDetailsDrawer v-model:open="isDetailsDrawerOpen" :reservation="selectedReservation" />
+        <NewBookingModal v-model:open="isNewBookingModalOpen" />
 </template>

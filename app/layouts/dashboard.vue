@@ -45,8 +45,7 @@ const allItems: NavigationMenuItem[][] = [
         { type: 'label', label: 'Front Desk' },
         { label: 'Front Desk', icon: 'i-lucide-concierge-bell', to: '/frontdesk' },
         { label: 'Guests', icon: 'i-lucide-users', to: '/frontdesk/guests' },
-        { label: 'Reservations', icon: 'i-lucide-calendar-check', to: '/frontdesk/bookings' },
-        { label: 'Group Bookings', icon: 'i-lucide-library', to: '/frontdesk/groups' }
+        { label: 'Reservations', icon: 'i-lucide-calendar-check', to: '/frontdesk/bookings' }
     ],
     [
         { type: 'label', label: 'Billing' },
