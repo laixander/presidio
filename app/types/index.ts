@@ -60,6 +60,8 @@ export interface StaffUser {
   password: string
   role: SystemRole
   isActive: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 /**

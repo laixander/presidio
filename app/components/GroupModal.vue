@@ -17,6 +17,8 @@ const emit = defineEmits<{
 const isOpen = defineModel<boolean>('open', { default: false })
 const formRef = useTemplateRef('form')
 const guestsStore = useGuestsStore()
+const reservationsStore = useReservationsStore()
+const roomsStore = useRoomsStore()
 
 const guestOptions = computed(() => 
     guestsStore.guests.map(g => ({
@@ -24,6 +26,13 @@ const guestOptions = computed(() =>
         value: g.id
     }))
 )
+
+const roomTypeOptions = computed(() => {
+    return roomsStore.roomTypes.map(rt => ({
+        label: rt.name,
+        value: rt.id
+    }))
+})
 
 const schema = z.object({
     groupName: z.string().min(1, 'Group Name is required'),
@@ -33,7 +42,8 @@ const schema = z.object({
     contactNumber: z.string().optional(),
     totalGuests: z.number().min(1, 'Must have at least 1 guest'),
     checkInDate: z.string().min(1, 'Check-in date is required'),
-    checkOutDate: z.string().min(1, 'Check-out date is required')
+    checkOutDate: z.string().min(1, 'Check-out date is required'),
+    roomAssignments: z.array(z.any()).default([])
 }).refine(data => {
     if (data.contactType === 'existing') {
         return !!data.contactGuestId && data.contactGuestId > 0;
@@ -55,7 +65,8 @@ const form = reactive({
     contactNumber: '',
     totalGuests: 1,
     checkInDate: '',
-    checkOutDate: ''
+    checkOutDate: '',
+    roomAssignments: [] as { id?: number, roomTypeId: number | undefined, guestId: number | undefined }[]
 })
 
 watch(() => props.group, (newVal) => {
@@ -68,6 +79,13 @@ watch(() => props.group, (newVal) => {
         form.totalGuests = newVal.totalGuests
         form.checkInDate = newVal.checkInDate
         form.checkOutDate = newVal.checkOutDate
+        
+        const existingRes = reservationsStore.reservations.filter(r => r.groupId === newVal.id)
+        form.roomAssignments = existingRes.map(r => ({
+            id: r.id,
+            roomTypeId: r.roomTypeId,
+            guestId: reservationsStore.getPrimaryGuestId(r)
+        }))
     }
 }, { deep: true, immediate: true })
 
@@ -81,6 +99,42 @@ function onSubmit(event: FormSubmitEvent<Schema>) {
         checkInDate: event.data.checkInDate,
         checkOutDate: event.data.checkOutDate
     })
+    
+    const groupId = props.group.id
+    const existingResIds = reservationsStore.reservations.filter(r => r.groupId === groupId).map(r => r.id)
+    const activeIds: number[] = []
+    
+    event.data.roomAssignments.forEach(assignment => {
+        if (assignment.roomTypeId && assignment.guestId) {
+            if (assignment.id) {
+                activeIds.push(assignment.id)
+                reservationsStore.updateReservation(assignment.id, {
+                    roomTypeId: assignment.roomTypeId,
+                    guests: [{ guestId: assignment.guestId, isPrimary: true }],
+                    checkInDate: event.data.checkInDate,
+                    checkOutDate: event.data.checkOutDate
+                })
+            } else {
+                reservationsStore.addReservation({
+                    guests: [{ guestId: assignment.guestId, isPrimary: true }],
+                    groupId: groupId,
+                    roomTypeId: assignment.roomTypeId,
+                    roomId: null,
+                    checkInDate: event.data.checkInDate,
+                    checkOutDate: event.data.checkOutDate,
+                    status: 'Pending',
+                    source: 'Corporate'
+                })
+            }
+        }
+    })
+    
+    existingResIds.forEach(id => {
+        if (!activeIds.includes(id)) {
+            reservationsStore.deleteReservation(id)
+        }
+    })
+
     isOpen.value = false
 }
 
@@ -137,6 +191,22 @@ function onCancel() {
                             </UFormField>
                         </div>
                     </template>
+
+                    <div class="mt-4 space-y-3 border-t border-default pt-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium">Room Assignments (Rooming List)</label>
+                            <UButton label="Add Room" icon="i-lucide-plus" size="xs" color="neutral" variant="soft" @click="form.roomAssignments.push({roomTypeId: undefined, guestId: undefined})" />
+                        </div>
+                        
+                        <div v-for="(assignment, idx) in form.roomAssignments" :key="idx" class="flex items-center gap-2">
+                            <USelect v-model.number="assignment.roomTypeId" :items="roomTypeOptions" placeholder="Select Room Style..." class="flex-1" />
+                            <USelect v-model.number="assignment.guestId" :items="guestOptions" placeholder="Select Guest..." class="flex-1" />
+                            <UButton icon="i-lucide-trash-2" color="error" variant="ghost" @click="form.roomAssignments.splice(idx, 1)" />
+                        </div>
+                        <div v-if="form.roomAssignments.length === 0" class="text-sm text-muted italic">
+                            No rooms assigned yet. Click "Add Room" to begin rooming list.
+                        </div>
+                    </div>
 
                     <!-- Actions -->
                     <div class="flex justify-end gap-2 pt-4">

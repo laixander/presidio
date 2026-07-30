@@ -43,7 +43,13 @@ export const useUsersStore = defineStore('users', () => {
 
     const addUser = (userData: Omit<StaffUser, 'id'>) => {
         const newId = users.value.length > 0 ? Math.max(...users.value.map(u => u.id)) + 1 : 1
-        const newUser: StaffUser = { id: newId, ...userData }
+        const now = new Date().toISOString()
+        const newUser: StaffUser = { 
+            id: newId, 
+            ...userData,
+            createdAt: now,
+            updatedAt: now
+        }
         users.value.push(newUser)
         persist()
         return newUser
@@ -54,7 +60,10 @@ export const useUsersStore = defineStore('users', () => {
         if (index !== -1) {
             const user = users.value[index]
             if (user) {
-                Object.assign(user, updates)
+                Object.assign(user, {
+                    ...updates,
+                    updatedAt: new Date().toISOString()
+                })
                 persist()
             }
         }

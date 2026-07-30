@@ -25,6 +25,8 @@ const guestsStore = useGuestsStore()
 const roomsStore = useRoomsStore()
 const foliosStore = useFoliosStore()
 
+const isCheckInModalOpen = ref(false)
+
 const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(authStore.currentRole.value ?? ''))
 
 const resId = computed(() => parseInt(route.params.id as string, 10))
@@ -70,7 +72,7 @@ const nights = computed(() => {
                         label="Check-In Guest" 
                         icon="i-lucide-log-in" 
                         color="primary"
-                        @click="router.push(`/frontdesk/checkin?id=${reservation.id}`)" 
+                        @click="isCheckInModalOpen = true" 
                     />
                     <UButton 
                         v-if="reservation.status === 'In-House'"
@@ -193,6 +195,7 @@ const nights = computed(() => {
                     </div>
                 </UCard>
             </div>
+            <CheckInModal v-model:open="isCheckInModalOpen" :reservation-id="reservation.id" />
         </div>
         
         <div v-else class="flex flex-col items-center justify-center py-20">

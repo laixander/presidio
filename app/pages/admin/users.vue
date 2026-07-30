@@ -8,6 +8,7 @@ import type { StaffUser } from '~/types'
 import UserModal from '~/components/UserModal.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
 import StatusBadge from '~/components/StatusBadge.vue'
+import UserDetailsDrawer from '~/components/UserDetailsDrawer.vue'
 
 definePageMeta({
     title: 'User Management',
@@ -27,6 +28,8 @@ const logger = useLogger('users')
 
 const isAuthorized = computed(() => authStore.currentRole.value === 'Administrator')
 const isDrawerOpen = ref(false)
+const isDetailsDrawerOpen = ref(false)
+const selectedUser = ref<StaffUser | null>(null)
 
 const userModal = overlay.create(UserModal)
 const confirmModal = overlay.create(ConfirmationModal)
@@ -78,6 +81,11 @@ const handleDeleteUser = (user: StaffUser) => {
     })
 }
 
+const handleViewDetails = (user: StaffUser) => {
+    selectedUser.value = user
+    isDetailsDrawerOpen.value = true
+}
+
 // ============================================================================
 // Table Configuration
 // ============================================================================
@@ -100,22 +108,6 @@ const columns: TableColumn<StaffUser>[] = [
         cell: ({ row }) => {
             const active = row.getValue('isActive') as boolean
             return h(StatusBadge, { status: active ? 'Active' : 'Inactive' })
-        }
-    },
-    {
-        id: 'actions',
-        cell: ({ row }) => {
-            const items: DropdownMenuItem[][] = [
-                [
-                    { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditUser(row.original) }
-                ],
-                [
-                    { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteUser(row.original) }
-                ]
-            ]
-            return h(UDropdownMenu, { items, content: { align: 'end' }, size: 'sm' }, {
-                default: () => h(UButton, { icon: 'i-lucide-ellipsis-vertical', color: 'neutral', variant: 'ghost', size: 'sm' })
-            })
         }
     }
 ]
@@ -157,7 +149,7 @@ const filteredUsers = computed(() => {
         </ClientOnly>
 
         <!-- List (table) view -->
-        <UTable v-if="viewMode === 'list'" :data="usersStore.users" :columns="columns" :loading="usersStore.isLoading" :global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 overflow-y-auto scrollbar">
+        <UTable v-if="viewMode === 'list'" sticky :data="usersStore.users" :columns="columns" :loading="usersStore.isLoading" :global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' }" class="flex-1 scrollbar" @select="(e, row) => handleViewDetails(row.original)">
             <template #empty>
                 <Empty :loading="usersStore.isLoading" title="No users found"
                     description="There are currently no users to display. Add a new user to get started."
@@ -185,20 +177,14 @@ const filteredUsers = computed(() => {
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <UCard v-for="user in filteredUsers" :key="user.id" variant="subtle"
-                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm cursor-pointer"
+                    @click="handleViewDetails(user)">
                     <template #header>
                         <div class="flex items-start justify-between">
                             <div>
                                 <h3 class="text-lg font-bold truncate pr-2">{{ user.name }}</h3>
                                 <p class="text-sm text-muted truncate">{{ user.email }}</p>
                             </div>
-                            <UDropdownMenu :items="[[
-                                { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditUser(user) }
-                            ], [
-                                { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteUser(user) }
-                            ]]" :content="{ align: 'end' }" size="sm">
-                                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
-                            </UDropdownMenu>
                         </div>
                     </template>
 
@@ -216,6 +202,7 @@ const filteredUsers = computed(() => {
             </div>
         </div>
 
+        <UserDetailsDrawer v-model:open="isDetailsDrawerOpen" :user="selectedUser" @edit="handleEditUser" @delete="handleDeleteUser" />
         <LogsDrawer v-model:open="isDrawerOpen" namespace="users" />
     </template>
 </template>

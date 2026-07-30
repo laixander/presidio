@@ -17,6 +17,14 @@ const roomsStore = useRoomsStore()
 const foliosStore = useFoliosStore()
 const router = useRouter()
 
+const isCheckInModalOpen = ref(false)
+const reservationToCheckIn = ref<number | undefined>(undefined)
+
+const openCheckIn = (id: number) => {
+    reservationToCheckIn.value = id
+    isCheckInModalOpen.value = true
+}
+
 const primaryGuestId = computed(() => props.reservation ? reservationsStore.getPrimaryGuestId(props.reservation) : undefined)
 const primaryGuest = computed(() => primaryGuestId.value ? guestsStore.getById(primaryGuestId.value) : undefined)
 const additionalGuests = computed(() => props.reservation?.guests.filter(g => !g.isPrimary).map(g => guestsStore.getById(g.guestId)) || [])
@@ -64,7 +72,7 @@ const nights = computed(() => {
                         label="Check-In" 
                         icon="i-lucide-log-in" 
                         color="primary"
-                        @click="router.push(`/frontdesk/checkin?id=${reservation.id}`)" 
+                        @click="openCheckIn(reservation.id)" 
                     />
                     <UButton 
                         v-if="reservation.status === 'In-House'"
@@ -194,4 +202,5 @@ const nights = computed(() => {
             </div>
         </template>
     </UDrawer>
+    <CheckInModal v-model:open="isCheckInModalOpen" :reservation-id="reservationToCheckIn" />
 </template>

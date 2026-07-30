@@ -23,6 +23,13 @@ const guestsStore = useGuestsStore()
 const router = useRouter()
 const events = useEvents()
 
+const isCheckInModalOpen = ref(false)
+const reservationToCheckIn = ref<number | undefined>(undefined)
+const openCheckInModal = (id: number) => {
+    reservationToCheckIn.value = id
+    isCheckInModalOpen.value = true
+}
+
 events.on('searchAvailability', () => {
     router.push('/frontdesk/search')
 })
@@ -87,7 +94,7 @@ const arrivalColumns: TableColumn<typeof arrivalsList.value[0]>[] = [
                 label: 'Check-In',
                 size: 'xs',
                 color: 'primary',
-                onClick: () => { router.push(`/frontdesk/checkin?id=${row.original.id}`) }
+                onClick: () => { openCheckInModal(row.original.id) }
             })
         }
     }
@@ -207,5 +214,6 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
                 </UTable>
             </UCard>
         </div>
+        <CheckInModal v-model:open="isCheckInModalOpen" :reservation-id="reservationToCheckIn" />
     </template>
 </template>

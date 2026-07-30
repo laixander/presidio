@@ -175,47 +175,6 @@ const columns: TableColumn<Room>[] = [
                 status: condition,
             })
         }
-    },
-    {
-        id: 'actions',
-        meta: { class: { td: 'text-right' } },
-        cell: ({ row }) => {
-            const items: DropdownMenuItem[][] = [
-                [
-                    {
-                        label: 'View Details',
-                        icon: 'i-lucide-eye',
-                        onSelect: () => handleViewDetails(row.original)
-                    },
-                    {
-                        label: 'Edit',
-                        icon: 'i-lucide-edit',
-                        onSelect: () => handleEditRoom(row.original)
-                    }
-                ],
-                [
-                    {
-                        label: 'Delete',
-                        icon: 'i-lucide-trash',
-                        color: 'error',
-                        onSelect: () => handleDeleteRoom(row.original)
-                    }
-                ]
-            ]
-
-            return h(UDropdownMenu, {
-                items,
-                content: { align: 'end' },
-                size: 'sm'
-            }, {
-                default: () => h(UButton, {
-                    icon: 'i-lucide-ellipsis-vertical',
-                    color: 'neutral',
-                    variant: 'ghost',
-                    size: 'sm'
-                })
-            })
-        }
     }
 ]
 
@@ -272,7 +231,8 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         <!-- List (table) view -->
         <UTable v-if="viewMode === 'list'" sticky ref="table" :data="roomsStore.rooms" :columns="columns"
             :loading="roomsStore.isLoading" v-model:column-visibility="columnVisibility"
-            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: { base: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' } }" class="flex-1 scrollbar"
+            @select="(e, row) => handleViewDetails(row.original)">
             <template #empty>
                 <Empty :loading="roomsStore.isLoading" title="No rooms found"
                     description="There are currently no rooms to display. Add a new room to get started."
@@ -299,7 +259,8 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <UCard v-for="room in filteredRooms" :key="room.id" variant="subtle"
-                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm cursor-pointer"
+                    @click="handleViewDetails(room)">
                     <template #header>
                         <div class="flex items-start justify-between">
                             <div>
@@ -307,14 +268,6 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
                                 <h3 class="text-lg font-bold">Room {{ room.number }}</h3>
                                 <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
                             </div>
-                            <UDropdownMenu :items="[[
-                                { label: 'View Details', icon: 'i-lucide-eye', onSelect: () => handleViewDetails(room) },
-                                { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditRoom(room) }
-                            ], [
-                                { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteRoom(room) }
-                            ]]" :content="{ align: 'end' }" size="sm">
-                                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
-                            </UDropdownMenu>
                         </div>
                     </template>
 
@@ -350,7 +303,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         <AdminFloorPlan v-else-if="viewMode === 'floorplan'" :rooms="filteredRooms" @edit="handleEditRoom" @delete="handleDeleteRoom" @select="handleViewDetails" />
 
         <RoomModal v-model:open="isAddRoomOpen" @submit="handleAddRoom" />
-        <RoomDetailsDrawer v-model:open="isDetailsDrawerOpen" :room="selectedRoom" />
+        <RoomDetailsDrawer v-model:open="isDetailsDrawerOpen" :room="selectedRoom" @edit="handleEditRoom" @delete="handleDeleteRoom" />
 
         <!-- ================================================================ -->
         <!-- Logs Drawer                                                       -->

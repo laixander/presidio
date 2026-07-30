@@ -14,6 +14,8 @@ const isOpen = defineModel<boolean>('open', { default: false })
 const router = useRouter()
 const guestsStore = useGuestsStore()
 const groupsStore = useGroupsStore()
+const roomsStore = useRoomsStore()
+const reservationsStore = useReservationsStore()
 const toast = useAppToast()
 const logger = useLogger('groups')
 
@@ -23,6 +25,13 @@ const guestOptions = computed(() =>
         value: g.id
     }))
 )
+
+const roomTypeOptions = computed(() => {
+    return roomsStore.roomTypes.map(rt => ({
+        label: rt.name,
+        value: rt.id
+    }))
+})
 
 const statusOptions = ['Pending', 'Confirmed']
 
@@ -35,6 +44,7 @@ const schema = z.object({
     totalGuests: z.number().min(1, 'Must have at least 1 guest'),
     checkInDate: z.string().min(1, 'Check-in date is required'),
     checkOutDate: z.string().min(1, 'Check-out date is required'),
+    roomAssignments: z.array(z.any()).default([]),
     status: z.enum(['Pending', 'Confirmed'])
 }).refine(data => {
     if (data.contactType === 'existing') {
@@ -58,6 +68,7 @@ const state = reactive({
     totalGuests: 1,
     checkInDate: '',
     checkOutDate: '',
+    roomAssignments: [] as { roomTypeId: number | undefined, guestId: number | undefined }[],
     status: 'Confirmed' as const
 })
 
@@ -72,12 +83,29 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
         checkOutDate: event.data.checkOutDate,
         status: event.data.status
     })
+
+    if (event.data.roomAssignments && event.data.roomAssignments.length > 0) {
+        event.data.roomAssignments.forEach(assignment => {
+            if (assignment.roomTypeId && assignment.guestId) {
+                reservationsStore.addReservation({
+                    guests: [{ guestId: assignment.guestId, isPrimary: true }],
+                    groupId: group.id,
+                    roomTypeId: assignment.roomTypeId,
+                    roomId: null,
+                    checkInDate: event.data.checkInDate,
+                    checkOutDate: event.data.checkOutDate,
+                    status: 'Pending',
+                    source: 'Corporate'
+                })
+            }
+        })
+    }
     
     logger.addLog(`Created group booking ${group.groupName}`, 'Created', 'success')
     toast.success('Group Created', `Group booking for ${group.groupName} has been successfully created.`)
     
     isOpen.value = false
-    router.push(`/frontdesk/groups/${group.id}`)
+    router.push(`/frontdesk/bookings/groups/${group.id}`)
 }
 </script>
 
@@ -144,6 +172,22 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
                         <UFormField label="Check-Out Date" name="checkOutDate">
                             <UInput v-model="state.checkOutDate" type="date" icon="i-lucide-calendar-days" class="w-full" />
                         </UFormField>
+                        
+                        <div class="sm:col-span-2 mt-4 space-y-3 border-t border-default pt-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium">Room Assignments (Rooming List)</label>
+                                <UButton label="Add Room" icon="i-lucide-plus" size="xs" color="neutral" variant="soft" @click="state.roomAssignments.push({roomTypeId: undefined, guestId: undefined})" />
+                            </div>
+                            
+                            <div v-for="(assignment, idx) in state.roomAssignments" :key="idx" class="flex items-center gap-2">
+                                <USelect v-model.number="assignment.roomTypeId" :items="roomTypeOptions" placeholder="Select Room Style..." class="flex-1" />
+                                <USelect v-model.number="assignment.guestId" :items="guestOptions" placeholder="Select Guest..." class="flex-1" />
+                                <UButton icon="i-lucide-trash-2" color="error" variant="ghost" @click="state.roomAssignments.splice(idx, 1)" />
+                            </div>
+                            <div v-if="state.roomAssignments.length === 0" class="text-sm text-muted italic">
+                                No rooms assigned yet. Click "Add Room" to begin rooming list.
+                            </div>
+                        </div>
                     </div>
                 </div>
 

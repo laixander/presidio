@@ -11,6 +11,7 @@ import type { Guest } from '~/types'
 import GuestAvatar from '~/components/GuestAvatar.vue'
 import GuestModal from '~/components/GuestModal.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
+import GuestDetailsDrawer from '~/components/GuestDetailsDrawer.vue'
 import { useRouter } from 'vue-router'
 
 // ============================================================================
@@ -40,6 +41,8 @@ const confirmModal = overlay.create(ConfirmationModal)
 
 const isAddGuestOpen = ref(false)
 const isDrawerOpen = ref(false)
+const isDetailsDrawerOpen = ref(false)
+const selectedGuest = ref<Guest | null>(null)
 
 // ============================================================================
 // Event Listeners
@@ -101,6 +104,11 @@ function handleDeleteGuest(guest: Guest) {
 // Table Configuration
 // ============================================================================
 
+const handleViewDetails = (guest: Guest) => {
+    selectedGuest.value = guest
+    isDetailsDrawerOpen.value = true
+}
+
 const columns: TableColumn<Guest>[] = [
     {
         accessorKey: 'id',
@@ -112,14 +120,11 @@ const columns: TableColumn<Guest>[] = [
         header: getSortableHeader('Name'),
         accessorFn: (row) => guestsStore.getFullName(row),
         cell: ({ row }) => {
-            return h(resolveComponent('ULink'), {
-                to: `/frontdesk/guests/${row.original.id}`,
-                class: 'block hover:opacity-80 transition-opacity'
-            }, () => h(GuestAvatar, {
+            return h(GuestAvatar, {
                 guest: row.original,
                 showDetails: true,
                 size: 'sm'
-            }))
+            })
         }
     },
     {
@@ -148,47 +153,6 @@ const columns: TableColumn<Guest>[] = [
         cell: ({ row }) => {
             const company = row.getValue('company') as string
             return company ? company : h('span', { class: 'text-muted italic' }, 'None')
-        }
-    },
-    {
-        id: 'actions',
-        meta: { class: { td: 'text-right' } },
-        cell: ({ row }) => {
-            const items: DropdownMenuItem[][] = [
-                [
-                    {
-                        label: 'View Profile',
-                        icon: 'i-lucide-user',
-                        onSelect: () => router.push(`/frontdesk/guests/${row.original.id}`)
-                    },
-                    {
-                        label: 'Edit Profile',
-                        icon: 'i-lucide-edit',
-                        onSelect: () => handleEditGuest(row.original)
-                    }
-                ],
-                [
-                    {
-                        label: 'Delete',
-                        icon: 'i-lucide-trash',
-                        color: 'error',
-                        onSelect: () => handleDeleteGuest(row.original)
-                    }
-                ]
-            ]
-
-            return h(UDropdownMenu, {
-                items,
-                content: { align: 'end' },
-                size: 'sm'
-            }, {
-                default: () => h(UButton, {
-                    icon: 'i-lucide-ellipsis-vertical',
-                    color: 'neutral',
-                    variant: 'ghost',
-                    size: 'sm'
-                })
-            })
         }
     }
 ]
@@ -246,7 +210,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
 
         <UTable v-if="viewMode === 'list'" sticky ref="table" :data="guestsStore.guests" :columns="columns"
             :loading="guestsStore.isLoading" v-model:column-visibility="columnVisibility"
-            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: { base: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' } }" class="flex-1 scrollbar" @select="(e, row) => handleViewDetails(row.original)">
             <template #empty>
                 <Empty :loading="guestsStore.isLoading" title="No guests found"
                     description="There are currently no guests to display. Add a new guest to get started."
@@ -274,7 +238,8 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <UCard v-for="guest in filteredGuests" :key="guest.id" variant="subtle"
-                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm">
+                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm cursor-pointer"
+                    @click="handleViewDetails(guest)">
                     <template #header>
                         <div class="flex items-start justify-between">
                             <div class="flex items-center gap-3">
@@ -284,14 +249,6 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
                                     <p class="text-xs text-muted">{{ guest.company || 'No Company' }}</p>
                                 </div>
                             </div>
-                            <UDropdownMenu :items="[[
-                                { label: 'View Profile', icon: 'i-lucide-user', onSelect: () => router.push(`/frontdesk/guests/${guest.id}`) },
-                                { label: 'Edit', icon: 'i-lucide-edit', onSelect: () => handleEditGuest(guest) }
-                            ], [
-                                { label: 'Delete', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDeleteGuest(guest) }
-                            ]]" :content="{ align: 'end' }" size="sm">
-                                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
-                            </UDropdownMenu>
                         </div>
                     </template>
 
@@ -315,6 +272,14 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
         </div>
 
         <GuestModal v-model:open="isAddGuestOpen" @submit="handleAddGuest" />
+
+        <GuestDetailsDrawer 
+            v-model:open="isDetailsDrawerOpen" 
+            :guest="selectedGuest" 
+            @view-profile="(g) => router.push(`/frontdesk/guests/${g.id}`)"
+            @edit="handleEditGuest" 
+            @delete="handleDeleteGuest" 
+        />
 
         <LogsDrawer v-model:open="isDrawerOpen" namespace="guests" />
     </template>

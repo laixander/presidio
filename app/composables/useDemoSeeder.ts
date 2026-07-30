@@ -36,7 +36,9 @@ export const useDemoSeeder = () => {
             email: faker.internet.email(),
             password: 'password123',
             role: faker.helpers.arrayElement(systemRoles),
-            isActive: true
+            isActive: true,
+            createdAt: faker.date.recent({ days: 30 }).toISOString(),
+            updatedAt: faker.date.recent({ days: 5 }).toISOString()
         }))
         // Ensure at least one of each role exists so that login always works
         systemRoles.forEach((role, i) => {

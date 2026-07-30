@@ -13,9 +13,10 @@ import type { GroupReservation } from '~/types'
 import StatusBadge from '~/components/StatusBadge.vue'
 import GuestAvatar from '~/components/GuestAvatar.vue'
 import ConfirmationModal from '~/components/ConfirmationModal.vue'
+import GroupDetailsDrawer from '~/components/GroupDetailsDrawer.vue'
 
 definePageMeta({
-    title: 'Group Bookings',
+    title: 'Reservations',
     layout: 'dashboard',
     isTable: true,
 })
@@ -26,6 +27,18 @@ const router = useRouter()
 const events = useEvents()
 
 const isNewGroupModalOpen = ref(false)
+const isDetailsDrawerOpen = ref(false)
+const selectedGroup = ref<GroupReservation | null>(null)
+
+const openGroupDetails = (res: GroupReservation) => {
+    selectedGroup.value = res
+    isDetailsDrawerOpen.value = true
+}
+
+const handleCancelGroupFromDrawer = (id: number) => {
+    groupToCancel.value = id
+    isCancelModalOpen.value = true
+}
 
 events.on('newGroupBooking', () => {
     isNewGroupModalOpen.value = true
@@ -71,48 +84,6 @@ const columns: TableColumn<GroupReservation>[] = [
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => h(StatusBadge, { status: row.original.status })
-    },
-    {
-        id: 'actions',
-        meta: { class: { td: 'text-right' } },
-        cell: ({ row }) => {
-            const res = row.original
-
-            const group: DropdownMenuItem[] = [
-                {
-                    label: 'View Details',
-                    icon: 'i-lucide-eye',
-                    onSelect: () => router.push(`/frontdesk/groups/${res.id}`)
-                }
-            ]
-
-            if (res.status !== 'Cancelled' && res.status !== 'Done') {
-                group.push({
-                    label: 'Cancel Group',
-                    icon: 'i-lucide-x-circle',
-                    color: 'error',
-                    onSelect: () => {
-                        groupToCancel.value = res.id
-                        isCancelModalOpen.value = true
-                    }
-                })
-            }
-
-            const items: DropdownMenuItem[][] = [group]
-
-            return h(UDropdownMenu, {
-                items,
-                content: { align: 'end' },
-                size: 'sm'
-            }, {
-                default: () => h(UButton, {
-                    icon: 'i-lucide-ellipsis-vertical',
-                    color: 'neutral',
-                    variant: 'ghost',
-                    size: 'sm'
-                })
-            })
-        }
     }
 ]
 
@@ -179,7 +150,7 @@ const getContactName = (res: GroupReservation) => {
 
         <UTable v-if="viewMode === 'list'" sticky ref="table" :data="groupsStore.groups" :columns="columns"
             :loading="groupsStore.isLoading" v-model:column-visibility="columnVisibility"
-            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" class="flex-1 scrollbar">
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6', tr: 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50' }" @select="(e, row) => openGroupDetails(row.original)" class="flex-1 scrollbar">
             <template #empty>
                 <Empty :loading="groupsStore.isLoading" title="No group bookings found"
                     description="There are currently no group reservations to display." icon="i-lucide-library"
@@ -187,7 +158,7 @@ const getContactName = (res: GroupReservation) => {
                     loading-description="Please wait while we fetch the group bookings.">
                     <template #action>
                         <UButton label="Create Group Booking" icon="i-lucide-plus" color="primary" size="lg"
-                            @click="router.push('/frontdesk/groups/new')" />
+                            @click="events.emit('newGroupBooking')" />
                     </template>
                 </Empty>
             </template>
@@ -199,13 +170,14 @@ const getContactName = (res: GroupReservation) => {
                 description="There are currently no group reservations to display." icon="i-lucide-library">
                 <template #action>
                     <UButton label="Create Group Booking" icon="i-lucide-plus" color="primary" size="lg"
-                        @click="router.push('/frontdesk/groups/new')" />
+                        @click="events.emit('newGroupBooking')" />
                 </template>
             </Empty>
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <UCard v-for="res in filteredGroups" :key="res.id" variant="subtle"
-                    class="hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm flex flex-col h-full"
+                    @click="openGroupDetails(res)"
+                    class="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm flex flex-col h-full"
                     :ui="{ body: 'flex-1', header: 'flex items-start justify-between gap-2' }">
                     <template #header>
                         <div class="w-full overflow-hidden space-y-1">
@@ -214,21 +186,6 @@ const getContactName = (res: GroupReservation) => {
                             </h3>
                             <StatusBadge :status="res.status" class="mt-1" />
                         </div>
-
-                        <UDropdownMenu :items="[
-                            [
-                                { label: 'View Details', icon: 'i-lucide-eye', onSelect: () => router.push(`/frontdesk/groups/${res.id}`) }
-                            ],
-                            [
-                                ...(res.status !== 'Cancelled' && res.status !== 'Done' ? [{
-                                    label: 'Cancel Group', icon: 'i-lucide-x-circle', color: 'error' as const, onSelect: () => {
-                                        groupToCancel = res.id; isCancelModalOpen = true
-                                    }
-                                }] : [])
-                            ]
-                        ]" :content="{ align: 'end' }" size="sm">
-                            <UButton icon="i-lucide-more-vertical" color="neutral" variant="ghost" size="sm" />
-                        </UDropdownMenu>
                     </template>
 
                     <div class="space-y-4">
@@ -263,6 +220,8 @@ const getContactName = (res: GroupReservation) => {
                 </UCard>
             </div>
         </div>
+
+        <GroupDetailsDrawer v-model:open="isDetailsDrawerOpen" :group="selectedGroup" @cancel-group="handleCancelGroupFromDrawer" />
 
         <ConfirmationModal v-model:open="isCancelModalOpen" title="Cancel Group Booking?"
             description="This will cancel the group booking and release all associated pending room blocks. Confirmed reservations will not be affected. This action cannot be undone."

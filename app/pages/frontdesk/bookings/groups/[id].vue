@@ -211,7 +211,7 @@ const setPrimaryGuest = (reservationId: number, guestId: number) => {
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="flex items-center gap-4">
                     <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost"
-                        @click="router.push('/frontdesk/groups')" />
+                        @click="router.push('/frontdesk/bookings/groups')" />
                     <div>
                         <div class="flex items-center gap-3">
                             <h1 class="text-2xl font-bold">{{ group.groupName }}</h1>
@@ -396,7 +396,7 @@ const setPrimaryGuest = (reservationId: number, guestId: number) => {
         <Empty v-else title="Group Not Found" description="The requested group booking could not be found."
             icon="i-lucide-file-question">
             <template #action>
-                <UButton label="Return to Groups" color="primary" @click="router.push('/frontdesk/groups')" />
+                <UButton label="Return to Groups" color="primary" @click="router.push('/frontdesk/bookings/groups')" />
             </template>
         </Empty>
 

@@ -7,6 +7,11 @@ const props = defineProps<{
     room: Room | null
 }>()
 
+const emit = defineEmits<{
+    (e: 'edit', room: Room): void
+    (e: 'delete', room: Room): void
+}>()
+
 const isOpen = defineModel<boolean>('open', { default: false })
 const roomsStore = useRoomsStore()
 
@@ -16,7 +21,7 @@ const roomType = computed(() => {
 </script>
 
 <template>
-    <UDrawer v-model:open="isOpen" direction="right" inset class="min-w-[400px]">
+    <UDrawer v-model:open="isOpen" direction="right" inset class="min-w-[500px]">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
@@ -30,7 +35,31 @@ const roomType = computed(() => {
         </template>
 
         <template #body v-if="room">
-            <div class="flex flex-col gap-8 mt-4">
+            <div class="flex flex-col gap-6 mt-4">
+                
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap items-center gap-3 bg-neutral-50 dark:bg-neutral-900 p-4 rounded-xl border border-default">
+                    <div class="text-sm font-semibold text-muted mr-auto flex items-center gap-2">
+                        <UIcon name="i-lucide-zap" class="size-4" />
+                        Quick Actions
+                    </div>
+                    
+                    <UButton 
+                        label="Edit Room" 
+                        icon="i-lucide-pencil" 
+                        color="neutral" 
+                        variant="soft"
+                        @click="emit('edit', room)" 
+                    />
+                    
+                    <UButton 
+                        label="Delete Room" 
+                        icon="i-lucide-trash" 
+                        color="error" 
+                        variant="soft"
+                        @click="emit('delete', room)" 
+                    />
+                </div>
                 
                 <!-- Status Section -->
                 <div class="space-y-4">
@@ -63,7 +92,7 @@ const roomType = computed(() => {
                             <span class="text-muted">Override Rate</span>
                             <span class="text-primary font-bold">₱{{ room.rateOverride.toLocaleString() }}</span>
                         </div>
-                        <div class="h-px bg-default my-1"></div>
+                        <div class="h-px bg-muted my-1"></div>
                         <div class="flex justify-between items-center font-bold">
                             <span>Effective Rate</span>
                             <span class="text-lg">₱{{ roomsStore.getEffectiveRate(room).toLocaleString() }}</span>
