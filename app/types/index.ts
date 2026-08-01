@@ -120,6 +120,7 @@ export type BookingSource = 'Walk-in' | 'Phone' | 'OTA' | 'Corporate'
  */
 export interface GroupReservation {
   id: number
+  bookingRef: string
   groupName: string
   contactGuestId?: number
   contactPerson?: string

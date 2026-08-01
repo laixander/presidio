@@ -152,6 +152,7 @@ const reservationColumns: TableColumn<Reservation>[] = [
                     <div v-if="group" class="text-2xl font-bold flex items-center gap-2">
                         {{ group.groupName }}
                         <StatusBadge :status="group.status" />
+                        <span class="text-sm font-mono text-muted bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-md">{{ group.bookingRef }}</span>
                     </div>
                     <div v-else class="text-2xl font-bold flex items-center gap-2">
                         Loading...

@@ -210,7 +210,7 @@ const isAuthorized = computed(() => ['Administrator', 'Front Desk'].includes(aut
 
         <UTable v-if="viewMode === 'list'" sticky ref="table" :data="guestsStore.guests" :columns="columns"
             :loading="guestsStore.isLoading" v-model:column-visibility="columnVisibility"
-            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: { base: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' } }" class="flex-1 scrollbar" @select="(e, row) => handleViewDetails(row.original)">
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' }" class="flex-1 scrollbar" @select="(e, row) => handleViewDetails(row.original)">
             <template #empty>
                 <Empty :loading="guestsStore.isLoading" title="No guests found"
                     description="There are currently no guests to display. Add a new guest to get started."

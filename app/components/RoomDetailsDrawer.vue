@@ -66,14 +66,14 @@ const roomType = computed(() => {
                     <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Current Status</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <UCard variant="subtle" :ui="{ body: 'sm:p-4' }" class="shadow-sm">
-                            <div class="text-xs text-muted mb-1">Occupancy</div>
-                            <div class="flex items-center gap-2">
+                            <div class="text-sm text-dimmed">Occupancy</div>
+                            <div class="flex items-center gap-2 mt-2">
                                 <StatusBadge :status="room.occupancyStatus" />
                             </div>
                         </UCard>
                         <UCard variant="subtle" :ui="{ body: 'sm:p-4' }" class="shadow-sm">
-                            <div class="text-xs text-muted mb-1">Housekeeping</div>
-                            <div class="flex items-center gap-2">
+                            <div class="text-sm text-dimmed">Housekeeping</div>
+                            <div class="flex items-center gap-2 mt-2">
                                 <StatusBadge :status="room.cleanStatus" />
                             </div>
                         </UCard>
@@ -85,11 +85,11 @@ const roomType = computed(() => {
                     <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Pricing</h3>
                     <UCard variant="subtle" :ui="{ body: 'sm:p-4 flex flex-col gap-2' }" class="shadow-sm">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-muted">Base Rate</span>
+                            <span class="text-dimmed">Base Rate</span>
                             <span>₱{{ roomType?.baseRate.toLocaleString() || '0' }}</span>
                         </div>
                         <div v-if="room.rateOverride !== null" class="flex justify-between items-center text-sm">
-                            <span class="text-muted">Override Rate</span>
+                            <span class="text-dimmed">Override Rate</span>
                             <span class="text-primary font-bold">₱{{ room.rateOverride.toLocaleString() }}</span>
                         </div>
                         <div class="h-px bg-muted my-1"></div>
@@ -105,15 +105,15 @@ const roomType = computed(() => {
                     <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Details</h3>
                     <UCard variant="subtle" :ui="{ body: 'sm:p-0 overflow-hidden text-sm' }" class="shadow-sm">
                         <div class="flex justify-between p-3 border-b border-default">
-                            <span class="text-muted">Max Occupancy</span>
+                            <span class="text-dimmed">Max Occupancy</span>
                             <span class="font-medium">{{ roomType?.maxOccupancy || 'N/A' }} Persons</span>
                         </div>
                         <div class="flex justify-between p-3 border-b border-default">
-                            <span class="text-muted">Type ID</span>
+                            <span class="text-dimmed">Type ID</span>
                             <span class="font-medium">{{ room.roomTypeId }}</span>
                         </div>
                         <div class="flex justify-between p-3">
-                            <span class="text-muted">Room ID</span>
+                            <span class="text-dimmed">Room ID</span>
                             <span class="font-medium">{{ room.id }}</span>
                         </div>
                     </UCard>

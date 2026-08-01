@@ -69,14 +69,14 @@ const getInitials = (name: string) => {
                     <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Access & Role</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <UCard variant="subtle" :ui="{ body: 'sm:p-4' }" class="shadow-sm">
-                            <div class="text-xs text-muted mb-1">System Role</div>
-                            <div class="flex items-center gap-2">
+                            <div class="text-sm text-dimmed">System Role</div>
+                            <div class="flex items-center gap-2 mt-2">
                                 <StatusBadge :status="user.role" />
                             </div>
                         </UCard>
                         <UCard variant="subtle" :ui="{ body: 'sm:p-4' }" class="shadow-sm">
-                            <div class="text-xs text-muted mb-1">Account Status</div>
-                            <div class="flex items-center gap-2">
+                            <div class="text-sm text-dimmed">Account Status</div>
+                            <div class="flex items-center gap-2 mt-2">
                                 <StatusBadge :status="user.isActive ? 'Active' : 'Inactive'" />
                             </div>
                         </UCard>
@@ -88,17 +88,17 @@ const getInitials = (name: string) => {
                     <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Account Information</h3>
                     <UCard variant="subtle" :ui="{ body: 'sm:p-0 overflow-hidden text-sm' }" class="shadow-sm">
                         <div class="flex justify-between p-3 border-b border-default">
-                            <span class="text-muted">User ID</span>
+                            <span class="text-dimmed">User ID</span>
                             <span class="font-medium font-mono">{{ user.id }}</span>
                         </div>
                         <div class="flex justify-between p-3 border-b border-default">
-                            <span class="text-muted">Date Created</span>
+                            <span class="text-dimmed">Date Created</span>
                             <span class="font-medium" :class="user.createdAt ? '' : 'text-muted'">
                                 {{ user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' }}
                             </span>
                         </div>
                         <div class="flex justify-between p-3">
-                            <span class="text-muted">Last Edited</span>
+                            <span class="text-dimmed">Last Edited</span>
                             <span class="font-medium" :class="user.updatedAt ? '' : 'text-muted'">
                                 {{ user.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : 'N/A' }}
                             </span>

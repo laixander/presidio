@@ -180,12 +180,9 @@ const getPrimaryGuest = (res: Reservation) => {
                     class="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-200 shadow-sm flex flex-col h-full"
                     :ui="{ body: 'flex-1', header: 'flex items-start justify-between gap-2' }">
                     <template #header>
-                        <div class="w-full overflow-hidden space-y-1">
-                            <h3 class="text-sm font-bold font-mono tracking-wider truncate">{{ res.bookingRef }}
-                            </h3>
-                            <StatusBadge :status="res.status" class="mt-1" />
-                        </div>
-
+                        <h3 class="text-sm font-bold font-mono tracking-wider truncate">{{ res.bookingRef }}
+                        </h3>
+                        <StatusBadge :status="res.status" />
                     </template>
 
                     <div class="space-y-4">

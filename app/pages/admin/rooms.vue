@@ -231,7 +231,7 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
         <!-- List (table) view -->
         <UTable v-if="viewMode === 'list'" sticky ref="table" :data="roomsStore.rooms" :columns="columns"
             :loading="roomsStore.isLoading" v-model:column-visibility="columnVisibility"
-            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: { base: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' } }" class="flex-1 scrollbar"
+            v-model:global-filter="globalFilter" :ui="{ th: 'sm:px-6', td: 'sm:px-6 cursor-pointer', tr: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer' }" class="flex-1 scrollbar"
             @select="(e, row) => handleViewDetails(row.original)">
             <template #empty>
                 <Empty :loading="roomsStore.isLoading" title="No rooms found"
@@ -266,8 +266,8 @@ const isAuthorized = computed(() => authStore.currentRole.value === 'Administrat
                             <div>
                                 <p class="text-xs text-muted">Floor {{ room.floor }}</p>
                                 <h3 class="text-lg font-bold">Room {{ room.number }}</h3>
-                                <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
                             </div>
+                            <StatusBadge :status="roomsStore.getRoomType(room)?.name || 'Unknown'" class="mt-1" />
                         </div>
                     </template>
 

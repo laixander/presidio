@@ -242,6 +242,7 @@ export const useDemoSeeder = () => {
             const checkOutDate = faker.date.soon({ days: 10, refDate: checkInDate })
             return {
                 id: i + 1,
+                bookingRef: `GRP-100${i + 1}`,
                 groupName: `${faker.company.name()} Group`,
                 contactGuestId: guest.id,
                 contactPerson: `${guest.firstName} ${guest.lastName}`,

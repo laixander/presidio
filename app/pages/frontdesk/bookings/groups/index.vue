@@ -49,6 +49,11 @@ events.on('newGroupBooking', () => {
 // ============================================================================
 const columns: TableColumn<GroupReservation>[] = [
     {
+        accessorKey: 'bookingRef',
+        header: 'Booking Ref',
+        cell: ({ row }) => h('span', { class: 'font-mono text-sm' }, row.original.bookingRef)
+    },
+    {
         accessorKey: 'groupName',
         header: 'Group Name',
         cell: ({ row }) => h('span', { class: 'font-semibold' }, row.original.groupName)
@@ -181,9 +186,12 @@ const getContactName = (res: GroupReservation) => {
                     :ui="{ body: 'flex-1', header: 'flex items-start justify-between gap-2' }">
                     <template #header>
                         <div class="w-full overflow-hidden space-y-1">
-                            <h3 class="text-sm font-bold font-mono tracking-wider truncate">
-                                {{ res.groupName }}
-                            </h3>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-bold truncate">
+                                    {{ res.groupName }}
+                                </h3>
+                                <span class="text-xs font-mono text-muted">{{ res.bookingRef }}</span>
+                            </div>
                             <StatusBadge :status="res.status" class="mt-1" />
                         </div>
                     </template>

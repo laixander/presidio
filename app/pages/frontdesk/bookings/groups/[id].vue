@@ -215,6 +215,7 @@ const setPrimaryGuest = (reservationId: number, guestId: number) => {
                     <div>
                         <div class="flex items-center gap-3">
                             <h1 class="text-2xl font-bold">{{ group.groupName }}</h1>
+                            <span class="text-sm font-mono text-muted bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-md">{{ group.bookingRef }}</span>
                             <StatusBadge :status="group.status" />
                         </div>
                         <p class="text-muted text-sm mt-1">Group Booking Details</p>

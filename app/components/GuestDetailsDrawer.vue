@@ -66,15 +66,6 @@ const columns: TableColumn<Reservation>[] = [
                     <div class="flex gap-2">
                         <UButton 
                             block
-                            label="View Full Profile" 
-                            icon="i-lucide-external-link" 
-                            color="primary" 
-                            variant="soft"
-                            @click="emit('view-profile', guest)" 
-                        />
-
-                        <UButton 
-                            block
                             label="Edit Guest" 
                             icon="i-lucide-pencil" 
                             color="neutral" 
@@ -101,11 +92,11 @@ const columns: TableColumn<Reservation>[] = [
                         <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Contact Details</h3>
                         <UCard variant="subtle" :ui="{ body: 'sm:p-0 overflow-hidden text-sm' }" class="shadow-sm">
                             <div class="flex justify-between p-3 border-b border-default">
-                                <span class="text-muted flex items-center gap-2"><UIcon name="i-lucide-mail" class="w-4 h-4" /> Email</span>
+                                <span class="text-dimmed flex items-center gap-2"><UIcon name="i-lucide-mail" class="w-4 h-4" /> Email</span>
                                 <span class="font-medium" :class="guest.email ? '' : 'text-muted italic'">{{ guest.email || 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between p-3">
-                                <span class="text-muted flex items-center gap-2"><UIcon name="i-lucide-phone" class="w-4 h-4" /> Phone</span>
+                                <span class="text-dimmed flex items-center gap-2"><UIcon name="i-lucide-phone" class="w-4 h-4" /> Phone</span>
                                 <span class="font-medium" :class="guest.phone ? '' : 'text-muted italic'">{{ guest.phone || 'N/A' }}</span>
                             </div>
                         </UCard>
@@ -116,11 +107,11 @@ const columns: TableColumn<Reservation>[] = [
                         <h3 class="text-sm font-bold text-muted uppercase tracking-wider">Profile Info</h3>
                         <UCard variant="subtle" :ui="{ body: 'sm:p-0 overflow-hidden text-sm' }" class="shadow-sm">
                             <div class="flex justify-between p-3 border-b border-default">
-                                <span class="text-muted">Guest ID</span>
+                                <span class="text-dimmed">Guest ID</span>
                                 <span class="font-medium font-mono">{{ guest.id }}</span>
                             </div>
                             <div class="flex justify-between p-3">
-                                <span class="text-muted">Company</span>
+                                <span class="text-dimmed">Company</span>
                                 <span class="font-medium" :class="guest.company ? '' : 'text-muted italic'">{{ guest.company || 'None' }}</span>
                             </div>
                         </UCard>

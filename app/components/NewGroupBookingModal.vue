@@ -74,6 +74,7 @@ const state = reactive({
 
 const handleSubmit = (event: FormSubmitEvent<Schema>) => {
     const group = groupsStore.addGroup({
+        bookingRef: `GRP-${Math.floor(Math.random() * 100000)}`,
         groupName: event.data.groupName,
         contactGuestId: event.data.contactType === 'existing' ? event.data.contactGuestId : undefined,
         contactPerson: event.data.contactType === 'new' ? event.data.contactPerson : undefined,
