@@ -60,7 +60,7 @@ type Schema = z.output<typeof schema>
 const form = reactive({
     groupName: '',
     contactType: 'existing' as 'existing' | 'new',
-    contactGuestId: 0,
+    contactGuestId: undefined as number | undefined,
     contactPerson: '',
     contactNumber: '',
     totalGuests: 1,
@@ -73,7 +73,7 @@ watch(() => props.group, (newVal) => {
     if (newVal) {
         form.groupName = newVal.groupName
         form.contactType = newVal.contactGuestId ? 'existing' : 'new'
-        form.contactGuestId = newVal.contactGuestId || 0
+        form.contactGuestId = newVal.contactGuestId || undefined
         form.contactPerson = newVal.contactPerson || ''
         form.contactNumber = newVal.contactNumber || ''
         form.totalGuests = newVal.totalGuests
@@ -178,7 +178,7 @@ function onCancel() {
 
                     <template v-if="form.contactType === 'existing'">
                         <UFormField label="Select Guest" name="contactGuestId">
-                            <USelect v-model.number="form.contactGuestId" :items="guestOptions" placeholder="Search or select a guest..." class="w-full" />
+                            <USelectMenu v-model.number="form.contactGuestId" :items="guestOptions" placeholder="Search or select a guest..." class="w-full" value-key="value" label-key="label" searchable />
                         </UFormField>
                     </template>
                     <template v-else>
@@ -200,7 +200,7 @@ function onCancel() {
                         
                         <div v-for="(assignment, idx) in form.roomAssignments" :key="idx" class="flex items-center gap-2">
                             <USelect v-model.number="assignment.roomTypeId" :items="roomTypeOptions" placeholder="Select Room Style..." class="flex-1" />
-                            <USelect v-model.number="assignment.guestId" :items="guestOptions" placeholder="Select Guest..." class="flex-1" />
+                            <USelectMenu v-model.number="assignment.guestId" :items="guestOptions" placeholder="Select Guest..." class="flex-1" value-key="value" label-key="label" searchable />
                             <UButton icon="i-lucide-trash-2" color="error" variant="ghost" @click="form.roomAssignments.splice(idx, 1)" />
                         </div>
                         <div v-if="form.roomAssignments.length === 0" class="text-sm text-muted italic">

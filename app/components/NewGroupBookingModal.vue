@@ -62,7 +62,7 @@ type Schema = z.infer<typeof schema>
 const state = reactive({
     groupName: '',
     contactType: 'new' as 'existing' | 'new',
-    contactGuestId: 0,
+    contactGuestId: undefined as number | undefined,
     contactPerson: '',
     contactNumber: '',
     totalGuests: 1,
@@ -148,7 +148,7 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
 
                     <template v-if="state.contactType === 'existing'">
                         <UFormField label="Select Guest" name="contactGuestId">
-                            <USelect v-model.number="state.contactGuestId" :items="guestOptions" placeholder="Search or select a guest..." class="w-full" />
+                            <USelectMenu v-model.number="state.contactGuestId" :items="guestOptions" placeholder="Search or select a guest..." class="w-full" value-key="value" label-key="label" searchable />
                         </UFormField>
                     </template>
                     <template v-else>
@@ -182,7 +182,7 @@ const handleSubmit = (event: FormSubmitEvent<Schema>) => {
                             
                             <div v-for="(assignment, idx) in state.roomAssignments" :key="idx" class="flex items-center gap-2">
                                 <USelect v-model.number="assignment.roomTypeId" :items="roomTypeOptions" placeholder="Select Room Style..." class="flex-1" />
-                                <USelect v-model.number="assignment.guestId" :items="guestOptions" placeholder="Select Guest..." class="flex-1" />
+                                <USelectMenu v-model.number="assignment.guestId" :items="guestOptions" placeholder="Select Guest..." class="flex-1" value-key="value" label-key="label" searchable />
                                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" @click="state.roomAssignments.splice(idx, 1)" />
                             </div>
                             <div v-if="state.roomAssignments.length === 0" class="text-sm text-muted italic">

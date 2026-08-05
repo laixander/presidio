@@ -2,7 +2,7 @@
 import { computed, ref, reactive, h } from 'vue'
 import { UBadge, UButton, USelect, USelectMenu, UTooltip, UIcon } from '#components'
 import type { TableColumn } from '@nuxt/ui'
-import type { GroupReservation, RoomBlock, Reservation } from '~/types'
+import type { GroupReservation, RoomBlock, Reservation, Guest } from '~/types'
 import StatusBadge from '~/components/StatusBadge.vue'
 import GuestAvatar from '~/components/GuestAvatar.vue'
 import GroupModal from '~/components/GroupModal.vue'
@@ -72,6 +72,14 @@ const openCheckIn = (id: number) => {
     isCheckInModalOpen.value = true
 }
 
+const isGuestDetailsDrawerOpen = ref(false)
+const selectedGuest = ref<Guest | null>(null)
+
+const openGuestDetails = (guest: Guest) => {
+    selectedGuest.value = guest
+    isGuestDetailsDrawerOpen.value = true
+}
+
 // ============================================================================
 // Reservations & Blocks Logic
 // ============================================================================
@@ -85,7 +93,7 @@ const reserveBlocks = () => {
     }
 }
 
-const groupReservations = computed(() => props.group ? reservationsStore.reservations.filter(r => r.groupId === props.group.id) : [])
+const groupReservations = computed(() => props.group ? reservationsStore.reservations.filter(r => r.groupId === props.group?.id) : [])
 
 const reservationColumns: TableColumn<Reservation>[] = [
     {
@@ -200,7 +208,7 @@ const reservationColumns: TableColumn<Reservation>[] = [
                         </template>
                         <div class="space-y-4">
                             <div class="flex items-start gap-4">
-                                <ULink v-if="contactGuest" :to="`/frontdesk/guests/${contactGuest.id}`" class="block hover:opacity-80 transition-opacity">
+                                <ULink v-if="contactGuest" @click="openGuestDetails(contactGuest)" class="block hover:opacity-80 transition-opacity cursor-pointer">
                                     <GuestAvatar :guest="contactGuest" size="lg" />
                                 </ULink>
                                 <div v-else class="size-12 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center shrink-0">
@@ -296,4 +304,10 @@ const reservationColumns: TableColumn<Reservation>[] = [
             </div>
         </template>
     </UDrawer>
+    <GuestDetailsDrawer 
+        v-model:open="isGuestDetailsDrawerOpen" 
+        :guest="selectedGuest" 
+        :hide-actions="true"
+        @view-profile="(g) => { router.push(`/frontdesk/guests/${g.id}`); isGuestDetailsDrawerOpen = false; isOpen = false }"
+    />
 </template>

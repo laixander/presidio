@@ -60,7 +60,7 @@ const columns: TableColumn<Reservation>[] = [
     {
         accessorKey: 'bookingRef',
         header: 'Booking Ref',
-        cell: ({ row }) => h('span', { class: 'font-semibold' }, row.original.bookingRef)
+        cell: ({ row }) => h('span', { class: 'font-mono text-sm' }, row.original.bookingRef)
     },
     {
         id: 'guest',

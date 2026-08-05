@@ -32,6 +32,20 @@ interface ChangelogEntry {
 
 const changelogs: ChangelogEntry[] = [
     {
+        date: 'August 5, 2026',
+        version: 'v1.0.8',
+        title: 'Housekeeping Overhaul & Front Desk Refinements',
+        description: 'Comprehensive update to the Housekeeping module with assignments and maintenance tracking, alongside new interactive drawer components for streamlined front desk operations.',
+        changes: [
+            { type: 'feature', text: 'Overhauled Housekeeping module with new Assignments and Maintenance tracking pages.' },
+            { type: 'feature', text: 'Introduced comprehensive drawer components: ReservationDetailsDrawer, RoomDetailsDrawer, and CheckInSlideover.' },
+            { type: 'feature', text: 'Added AdminFloorPlan for visual room management.' },
+            { type: 'feature', text: 'Implemented NewTaskModal and CleaningModal to improve operational workflows.' },
+            { type: 'refactor', text: 'Reorganized Front Desk Bookings and Groups pages for a smoother user experience.' },
+            { type: 'refactor', text: 'Removed deprecated service files to consolidate state management architecture.' }
+        ]
+    },
+    {
         date: 'July 3, 2026',
         version: 'v1.0.7',
         title: 'Multiple Guest Assignment',

@@ -25,11 +25,6 @@ events.on('viewSettingsLogs', () => {
     isDrawerOpen.value = true
 })
 
-const tabs = [
-    { label: 'General Settings', icon: 'i-lucide-settings', slot: 'general' },
-    { label: 'Room Types', icon: 'i-lucide-bed-double', slot: 'room-types' }
-]
-
 // General Settings
 const generalState = ref({ ...settingsStore.settings })
 
@@ -121,10 +116,10 @@ const formatCurrency = (val: number) => {
 <template>
     <AuthGate v-if="!isAuthorized" title="Access Denied" description="You must be an Administrator to access System Settings." icon="i-lucide-lock" />
 
-    <div v-else class="w-full max-w-(--ui-container) mx-auto space-y-6">
+    <div v-else class="w-full max-w-4xl mx-auto space-y-6">
         <UPageCard title="System Settings"
             description="Configure global application preferences and manage room classifications."
-            variant="naked" orientation="horizontal" />
+            variant="naked" />
 
         <ClientOnly>
             <Teleport to="#header-actions-teleport">
@@ -134,79 +129,73 @@ const formatCurrency = (val: number) => {
             </Teleport>
         </ClientOnly>
 
-        <UTabs :items="tabs" variant="link" class="w-full">
-            <!-- General Settings Tab -->
-            <template #general>
-                <UCard title="General Configuration" description="Manage basic hotel information." variant="subtle" class="shadow-sm mt-4 w-fit">                    
-                    <UForm :state="generalState" @submit="saveGeneralSettings" class="space-y-6 max-w-xl">
-                        <UFormField label="Hotel Name">
-                            <UInput v-model="generalState.hotelName" class="w-full" />
-                        </UFormField>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <UFormField label="Timezone">
-                                <UInput v-model="generalState.timezone" disabled class="w-full" />
-                            </UFormField>
-                            <UFormField label="Currency">
-                                <UInput v-model="generalState.currency" disabled class="w-full" />
-                            </UFormField>
-                        </div>
-                        
-                        <UFormField label="Tax Rate (%)">
-                            <UInput v-model="generalState.taxRate" type="number" class="w-full" />
-                        </UFormField>
-                        
-                        <UButton type="submit" color="primary">Save Changes</UButton>
-                    </UForm>
-                </UCard>
-            </template>
+        <!-- General Settings -->
+        <UCard title="General Configuration" description="Manage basic hotel information." variant="subtle" class="shadow-sm w-full">                    
+            <UForm :state="generalState" @submit="saveGeneralSettings" class="space-y-6">
+                <UFormField label="Hotel Name">
+                    <UInput v-model="generalState.hotelName" class="w-full" />
+                </UFormField>
+                
+                <div class="grid lg:grid-cols-3 gap-4">
+                    <UFormField label="Timezone">
+                        <UInput v-model="generalState.timezone" disabled class="w-full" />
+                    </UFormField>
+                    <UFormField label="Currency">
+                        <UInput v-model="generalState.currency" disabled class="w-full" />
+                    </UFormField>
+                    <UFormField label="Tax Rate (%)">
+                        <UInput v-model="generalState.taxRate" type="number" class="w-full" />
+                    </UFormField>
+                </div>
+                <div class="w-full flex justify-end">
+                    <UButton type="submit" color="primary">Save Changes</UButton>
+                </div>
+            </UForm>
+        </UCard>
 
-            <!-- Room Types Tab -->
-            <template #room-types>
-                <UCard title="Room Types" description="Manage room classifications, capacities, and base rates." variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="mt-4 shadow-sm">                    
-                    <template #header>
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="font-semibold">Room Types</h3>
-                                <p class="text-sm text-muted">Manage room classifications, capacities, and base rates.</p>
-                            </div>
-                            <UButton icon="i-lucide-plus" color="primary" variant="soft" @click="openNewRoomTypeModal">
-                                New Room Type
-                            </UButton>
-                        </div>
-                    </template>
-                    <UTable :data="roomsStore.roomTypes" :columns="roomTypeColumns" class="w-full">
-                        <template #name-cell="{ row }">
-                            <span class="font-medium">{{ row.original.name }}</span>
-                        </template>
-                        <template #maxOccupancy-cell="{ row }">
-                            <div class="flex items-center gap-1">
-                                <UIcon name="i-lucide-users" class="w-4 h-4 text-neutral-400" />
-                                <span>{{ row.original.maxOccupancy }} guests</span>
-                            </div>
-                        </template>
-                        <template #baseRate-cell="{ row }">
-                            <div class="flex items-center gap-2">
-                                <UInput v-model.number="row.original.baseRate" type="number" size="sm" class="w-24" />
-                                <span class="text-xs text-muted">PHP / night</span>
-                            </div>
-                        </template>
-                        <template #actions-cell="{ row }">
-                            <div class="flex justify-end gap-1">
-                                <UButton icon="i-lucide-edit" color="neutral" variant="ghost" size="sm" @click="openEditRoomTypeModal(row.original)" />
-                                <UButton icon="i-lucide-trash" color="error" variant="ghost" size="sm" @click="deleteRoomType(row.original)" />
-                            </div>
-                        </template>
-                    </UTable>
-                    
-                    <div class="p-4 border-t border-default flex justify-end">
-                        <UButton color="primary" @click="toast.success('Rates Updated', 'Room type base rates have been saved.')">
-                            Save Room Rates
-                        </UButton>
+        <!-- Room Types -->
+        <UCard title="Room Types" description="Manage room classifications, capacities, and base rates." variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="shadow-sm w-full">                    
+            <template #header>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-semibold">Room Types</h3>
+                        <p class="text-sm text-muted">Manage room classifications, capacities, and base rates.</p>
                     </div>
-                </UCard>
+                    <UButton icon="i-lucide-plus" color="primary" variant="soft" @click="openNewRoomTypeModal">
+                        New Room Type
+                    </UButton>
+                </div>
             </template>
-        </UTabs>
+            <UTable :data="roomsStore.roomTypes" :columns="roomTypeColumns" class="w-full">
+                <template #name-cell="{ row }">
+                    <span class="font-medium">{{ row.original.name }}</span>
+                </template>
+                <template #maxOccupancy-cell="{ row }">
+                    <div class="flex items-center gap-1">
+                        <UIcon name="i-lucide-users" class="w-4 h-4 text-neutral-400" />
+                        <span>{{ row.original.maxOccupancy }} guests</span>
+                    </div>
+                </template>
+                <template #baseRate-cell="{ row }">
+                    <div class="flex items-center gap-2">
+                        <UInput v-model.number="row.original.baseRate" type="number" size="sm" class="w-24" />
+                        <span class="text-xs text-muted">PHP / night</span>
+                    </div>
+                </template>
+                <template #actions-cell="{ row }">
+                    <div class="flex justify-end gap-1">
+                        <UButton icon="i-lucide-edit" color="neutral" variant="ghost" size="sm" @click="openEditRoomTypeModal(row.original)" />
+                        <UButton icon="i-lucide-trash" color="error" variant="ghost" size="sm" @click="deleteRoomType(row.original)" />
+                    </div>
+                </template>
+            </UTable>
+            
+            <div class="p-4 border-t border-default flex justify-end">
+                <UButton color="primary" @click="toast.success('Rates Updated', 'Room type base rates have been saved.')">
+                    Save Room Rates
+                </UButton>
+            </div>
+        </UCard>
 
         <UModal v-model:open="isRoomTypeModalOpen" :title="editingRoomType ? 'Edit Room Type' : 'New Room Type'">
             <template #body>

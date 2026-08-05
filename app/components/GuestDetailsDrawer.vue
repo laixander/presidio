@@ -7,6 +7,7 @@ import StatusBadge from '~/components/StatusBadge.vue'
 
 const props = defineProps<{
     guest: Guest | null
+    hideActions?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -36,7 +37,7 @@ const columns: TableColumn<Reservation>[] = [
 </script>
 
 <template>
-    <UDrawer v-model:open="isOpen" direction="right" inset class="min-w-[900px]">
+    <UDrawer v-model:open="isOpen" direction="right" inset class="min-w-[862px]">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-4">
@@ -58,7 +59,7 @@ const columns: TableColumn<Reservation>[] = [
         <template #body v-if="guest">
             <div class="grid grid-cols-1 gap-4">
                 <!-- Quick Actions -->
-                <UCard :ui="{ body: 'sm:p-4 flex flex-col lg:flex-row gap-3' }">
+                <UCard v-if="!hideActions" :ui="{ body: 'sm:p-4 flex flex-col lg:flex-row gap-3' }">
                     <div class="text-sm font-semibold text-muted flex items-center gap-2 w-full shadow-sm">
                         <UIcon name="i-lucide-zap" class="size-4" />
                         Quick Actions

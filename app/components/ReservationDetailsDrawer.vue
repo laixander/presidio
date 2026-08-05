@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Reservation } from '~/types'
+import type { Reservation, Guest } from '~/types'
 import StatusBadge from '~/components/StatusBadge.vue'
 import GuestAvatar from '~/components/GuestAvatar.vue'
 import { UBadge } from '#components'
@@ -25,6 +25,14 @@ const openCheckIn = (id: number) => {
     isCheckInModalOpen.value = true
 }
 
+const isGuestDetailsDrawerOpen = ref(false)
+const selectedGuest = ref<Guest | null>(null)
+
+const openGuestDetails = (guest: Guest) => {
+    selectedGuest.value = guest
+    isGuestDetailsDrawerOpen.value = true
+}
+
 const primaryGuestId = computed(() => props.reservation ? reservationsStore.getPrimaryGuestId(props.reservation) : undefined)
 const primaryGuest = computed(() => primaryGuestId.value ? guestsStore.getById(primaryGuestId.value) : undefined)
 const additionalGuests = computed(() => props.reservation?.guests.filter(g => !g.isPrimary).map(g => guestsStore.getById(g.guestId)) || [])
@@ -44,7 +52,7 @@ const nights = computed(() => {
 </script>
 
 <template>
-    <UDrawer v-model:open="isOpen" direction="right" inset class="min-w-[500px]">
+    <UDrawer v-model:open="isOpen" direction="right" inset class="min-w-[900px]">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
@@ -92,82 +100,108 @@ const nights = computed(() => {
                     />
                 </div>
 
-                <!-- Guest Info -->
-                <UCard variant="subtle" class="shadow-sm">
-                    <template #header>
-                        <div class="flex items-center gap-2 font-semibold">
-                            <UIcon name="i-lucide-user" class="text-primary size-5" />
-                            Guest Information
-                        </div>
-                    </template>
-                    <div class="space-y-4">
-                        <div v-if="primaryGuest" class="flex items-start gap-4">
-                            <ULink :to="`/frontdesk/guests/${primaryGuest.id}`" class="block hover:opacity-80 transition-opacity">
-                                <GuestAvatar :guest="primaryGuest" size="lg" />
-                            </ULink>
-                            <div class="space-y-2">
-                                <div>
-                                    <div class="font-bold text-lg flex items-center gap-2">
-                                        {{ primaryGuest.firstName }} {{ primaryGuest.lastName }}
-                                        <UBadge size="xs" variant="subtle" color="primary">Primary</UBadge>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Guest Info -->
+                    <UCard variant="subtle" class="shadow-sm">
+                        <template #header>
+                            <div class="flex items-center gap-2 font-semibold">
+                                <UIcon name="i-lucide-user" class="text-primary size-5" />
+                                Guest Information
+                            </div>
+                        </template>
+                        <div class="space-y-4">
+                            <div v-if="primaryGuest" class="flex items-start gap-4">
+                                <!-- <ULink :to="`/frontdesk/guests/${primaryGuest.id}`" class="block hover:opacity-80 transition-opacity">
+                                    <GuestAvatar :guest="primaryGuest" size="lg" />
+                                </ULink>
+                                <div class="space-y-2">
+                                    <div>
+                                        <div class="font-bold text-lg flex items-center gap-2">
+                                            {{ primaryGuest.firstName }} {{ primaryGuest.lastName }}
+                                            <UBadge size="xs" variant="subtle" color="primary">Primary</UBadge>
+                                        </div>
+                                        <div class="text-sm text-muted">{{ primaryGuest.email }}</div>
+                                        <div class="text-sm text-muted">{{ primaryGuest.phone }}</div>
                                     </div>
-                                    <div class="text-sm text-muted">{{ primaryGuest.email }}</div>
-                                    <div class="text-sm text-muted">{{ primaryGuest.phone }}</div>
+                                    <div class="flex gap-2 mt-2">
+                                        <UBadge v-if="primaryGuest.isVip" color="warning" variant="subtle" icon="i-lucide-crown">VIP</UBadge>
+                                        <UBadge v-if="primaryGuest.company" color="neutral" variant="subtle" icon="i-lucide-building">{{ primaryGuest.company }}</UBadge>
+                                    </div>
+                                </div> -->
+                                <ULink @click="openGuestDetails(primaryGuest)" class="block hover:opacity-80 transition-opacity">
+                                    <GuestAvatar :guest="primaryGuest" size="lg" />
+                                </ULink>
+                                <div>
+                                    <div class="text-xl font-bold flex items-center gap-2">
+                                        {{ guestsStore.getFullName(primaryGuest) }}
+                                        <UBadge v-if="primaryGuest.isVip" label="VIP"  color="primary" size="xs" variant="subtle" />
+                                    </div>
+                                    <div class="text-sm text-muted mt-1 space-y-1">
+                                        <div v-if="primaryGuest.email" class="flex items-center gap-2">
+                                            <UIcon name="i-lucide-mail" class="size-4" /> {{ primaryGuest.email }}
+                                        </div>
+                                        <div v-if="primaryGuest.phone" class="flex items-center gap-2">
+                                            <UIcon name="i-lucide-phone" class="size-4" /> {{ primaryGuest.phone }}
+                                        </div>
+                                        <div v-if="primaryGuest.company" class="flex items-center gap-2">
+                                            <UIcon name="i-lucide-building" class="size-4" /> {{ primaryGuest.company }}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex gap-2 mt-2">
-                                    <UBadge v-if="primaryGuest.isVip" color="warning" variant="subtle" icon="i-lucide-crown">VIP</UBadge>
-                                    <UBadge v-if="primaryGuest.company" color="neutral" variant="subtle" icon="i-lucide-building">{{ primaryGuest.company }}</UBadge>
+                            </div>
+                            <div v-else class="text-muted italic flex items-center justify-center p-4">
+                                Primary guest unassigned
+                            </div>
+                            
+                            <div v-if="additionalGuests.length > 0" class="pt-4 border-t border-default space-y-2">
+                                <h4 class="text-sm font-semibold text-muted">Additional Guests</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <button 
+                                        v-for="g in additionalGuests" 
+                                        :key="g?.id" 
+                                        @click="g && openGuestDetails(g)"
+                                        class="flex items-center gap-2 border border-default p-1.5 pr-3 rounded-full bg-white dark:bg-neutral-950 hover:border-primary/50 transition-colors focus:outline-none focus-visible:ring-2 ring-primary cursor-pointer text-left"
+                                    >
+                                        <GuestAvatar v-if="g" :guest="g" size="sm" />
+                                        <span v-if="g" class="text-sm font-medium">{{ guestsStore.getFullName(g) }}</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="text-muted italic flex items-center justify-center p-4">
-                            Primary guest unassigned
-                        </div>
-                        
-                        <div v-if="additionalGuests.length > 0" class="pt-4 border-t border-default space-y-2">
-                            <h4 class="text-sm font-semibold text-muted">Additional Guests</h4>
-                            <div class="flex flex-wrap gap-2">
-                                <div v-for="g in additionalGuests" :key="g?.id" class="flex items-center gap-2 border border-default p-1.5 pr-3 rounded-full bg-white dark:bg-neutral-950">
-                                    <GuestAvatar v-if="g" :guest="g" size="sm" />
-                                    <span v-if="g" class="text-sm font-medium">{{ guestsStore.getFullName(g) }}</span>
+                    </UCard>
+                    <!-- Stay Info -->
+                    <UCard variant="subtle" class="shadow-sm">
+                        <template #header>
+                            <div class="flex items-center gap-2 font-semibold">
+                                <UIcon name="i-lucide-calendar" class="text-primary size-5" />
+                                Stay Details
+                            </div>
+                        </template>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-sm text-dimmed mb-1">Check-In</div>
+                                    <div class="font-medium">{{ formatDate(reservation.checkInDate) }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-dimmed mb-1">Check-Out</div>
+                                    <div class="font-medium">{{ formatDate(reservation.checkOutDate) }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-default">
+                                <div>
+                                    <div class="text-sm text-dimmed mb-1">Duration</div>
+                                    <div class="font-medium">{{ nights }} Night{{ nights > 1 ? 's' : '' }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-dimmed mb-1">Source</div>
+                                    <div class="font-medium">{{ reservation.source }}</div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </UCard>
-
-                <!-- Stay Info -->
-                <UCard variant="subtle" class="shadow-sm">
-                    <template #header>
-                        <div class="flex items-center gap-2 font-semibold">
-                            <UIcon name="i-lucide-calendar" class="text-primary size-5" />
-                            Stay Details
-                        </div>
-                    </template>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <div class="text-sm text-muted mb-1">Check-In</div>
-                                <div class="font-medium">{{ formatDate(reservation.checkInDate) }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-muted mb-1">Check-Out</div>
-                                <div class="font-medium">{{ formatDate(reservation.checkOutDate) }}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-default">
-                            <div>
-                                <div class="text-sm text-muted mb-1">Duration</div>
-                                <div class="font-medium">{{ nights }} Night{{ nights > 1 ? 's' : '' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-muted mb-1">Source</div>
-                                <div class="font-medium">{{ reservation.source }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </UCard>
+                    </UCard>
+                </div>
 
                 <!-- Room Info -->
                 <UCard variant="subtle" class="shadow-sm">
@@ -179,11 +213,11 @@ const nights = computed(() => {
                     </template>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
-                            <div class="text-sm text-muted mb-1">Requested Room Type</div>
+                            <div class="text-sm text-dimmed mb-1">Requested Room Type</div>
                             <div class="font-medium">{{ roomType?.name || 'Unknown' }}</div>
                         </div>
                         <div>
-                            <div class="text-sm text-muted mb-1">Assigned Room</div>
+                            <div class="text-sm text-dimmed mb-1">Assigned Room</div>
                             <div v-if="room" class="flex items-center gap-2">
                                 <span class="font-medium text-primary">{{ room.number }}</span>
                                 <UBadge color="neutral" variant="soft" size="xs">{{ room.floor }}</UBadge>
@@ -203,4 +237,10 @@ const nights = computed(() => {
         </template>
     </UDrawer>
     <CheckInModal v-model:open="isCheckInModalOpen" :reservation-id="reservationToCheckIn" />
+    <GuestDetailsDrawer 
+        v-model:open="isGuestDetailsDrawerOpen" 
+        :guest="selectedGuest" 
+        :hide-actions="true"
+        @view-profile="(g) => { router.push(`/frontdesk/guests/${g.id}`); isGuestDetailsDrawerOpen = false; isOpen = false }"
+    />
 </template>
