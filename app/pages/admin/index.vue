@@ -75,7 +75,8 @@ const reservationStatusData = computed(() => ({
 
 const departuresList = computed(() =>
     reservationsStore.departuresToday.map(r => {
-        const guest = r.guestId ? guestsStore.getById(r.guestId) : undefined
+        const guestId = reservationsStore.getPrimaryGuestId(r)
+        const guest = guestId ? guestsStore.getById(guestId) : undefined
         const room = roomsStore.rooms.find(rm => rm.id === r.roomId)
         return {
             guestName: guest ? guestsStore.getFullName(guest) : 'Unknown',
@@ -191,5 +192,16 @@ const hkSummary = computed(() => housekeepingStore.statusCounts)
                 </div>
             </UCard>
         </div>
+
+        <Teleport to="#header-actions-teleport">
+            <UButton 
+                label="Manage Inventory" 
+                icon="i-lucide-archive" 
+                color="primary" 
+                variant="soft" 
+                size="sm" 
+                to="/admin/inventory" 
+            />
+        </Teleport>
     </template>
 </template>

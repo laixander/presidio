@@ -37,6 +37,7 @@ const allItems: NavigationMenuItem[][] = [
         { label: 'Admin Dashboard', icon: 'i-lucide-layout-dashboard', to: '/admin' },
         { label: 'Rooms', icon: 'i-lucide-bed-double', to: '/admin/rooms' },
         { label: 'Users', icon: 'i-lucide-users-round', to: '/admin/users' },
+        { label: 'Inventory', icon: 'i-lucide-archive', to: '/admin/inventory' },
         { label: 'Settings', icon: 'i-lucide-settings', to: '/admin/settings' },
         { label: 'Reports', icon: 'i-lucide-pie-chart', to: '/admin/reports' },
         { label: 'Engine Control', icon: 'i-lucide-cpu', to: '/admin/simulation' }

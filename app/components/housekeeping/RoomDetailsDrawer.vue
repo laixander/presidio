@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import type { Room, CleanStatus } from '~/types'
+
 
 const props = defineProps<{
     room: Room | null
@@ -13,12 +14,90 @@ const emit = defineEmits<{
 
 const roomsStore = useRoomsStore()
 const housekeepingStore = useHousekeepingStore()
+const inventoryStore = useInventoryStore()
+const reservationsStore = useReservationsStore()
+const foliosStore = useFoliosStore()
 const toast = useAppToast()
 
 const selectedRoomTasks = computed(() => {
     if (!props.room) return []
     return housekeepingStore.getTasksForRoom(props.room.id)
 })
+
+onMounted(() => {
+    inventoryStore.hydrate()
+    reservationsStore.hydrate()
+    foliosStore.hydrate()
+})
+
+const selectedItemId = ref<number | null>(null)
+const consumeQty = ref<number>(1)
+
+const minibarItems = computed(() => {
+    return inventoryStore.items
+})
+
+const activeReservation = computed(() => {
+    const room = props.room
+    if (!room) return null
+    return reservationsStore.reservations.find(
+        r => r.roomId === room.id && r.status === 'In-House'
+    ) || null
+})
+
+const activeFolio = computed(() => {
+    const res = activeReservation.value
+    if (!res) return null
+    return foliosStore.folios.find(
+        f => f.reservationId === res.id && f.status === 'Open'
+    ) || null
+})
+
+watch(() => inventoryStore.items, (newItems) => {
+    const firstItem = newItems[0]
+    if (firstItem && !selectedItemId.value) {
+        selectedItemId.value = firstItem.id
+    }
+}, { immediate: true })
+
+const logConsumable = () => {
+    if (!props.room || !selectedItemId.value) return
+    const qty = Number(consumeQty.value)
+    if (qty <= 0) {
+        toast.error('Invalid Quantity', 'Please select a quantity greater than zero.')
+        return
+    }
+
+    const item = inventoryStore.items.find(i => i.id === selectedItemId.value)
+    if (!item) return
+    if (item.stockCount < qty) {
+        toast.error('Out of Stock', `Only ${item.stockCount} units of ${item.name} available in inventory.`)
+        return
+    }
+
+    const success = inventoryStore.logUsage(props.room.id, selectedItemId.value, qty, 'Housekeeping')
+    if (!success) {
+        toast.error('Error Logging', 'Failed to update inventory.')
+        return
+    }
+
+    if (activeFolio.value) {
+        foliosStore.addCharge({
+            folioId: activeFolio.value.id,
+            description: `${item.name}`,
+            type: item.category === 'Mini Bar' ? 'Mini Bar' : 'Misc',
+            unitPrice: item.price,
+            quantity: qty,
+            total: item.price * qty,
+            postedAt: new Date().toISOString()
+        })
+        toast.success('Charged to Room Folio', `Logged ${qty}x ${item.name} and posted ₱${item.price * qty} to Folio ${activeFolio.value.folioNumber}.`)
+    } else {
+        toast.success('Inventory Logged', `Logged ${qty}x ${item.name} consumed (Room is Occupied but no active open Folio was found).`)
+    }
+
+    consumeQty.value = 1
+}
 
 const updateCleanStatus = (status: CleanStatus) => {
     if (!props.room) return
@@ -41,6 +120,7 @@ const toggleMaintenance = () => {
         toast.success('Maintenance Resolved', `Room ${props.room.number} is back to Normal condition and needs Pickup.`)
     }
 }
+
 </script>
 
 <template>
@@ -152,6 +232,54 @@ const toggleMaintenance = () => {
                             block
                             @click.stop="toggleMaintenance" 
                         />
+                    </div>
+                </section>
+
+                <!-- Consumables Section (Only for Occupied Rooms) -->
+                <section v-if="room.occupancyStatus === 'Occupied'">
+                    <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Log Consumables</h3>
+                    <div class="bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-lg border border-default space-y-4">
+                        <div v-if="activeFolio" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 mb-2">
+                            <UIcon name="i-lucide-check-circle" class="w-4 h-4 text-emerald-500" />
+                            Active Folio: {{ activeFolio.folioNumber }}
+                        </div>
+                        <div v-else class="text-xs text-amber-500 font-semibold flex items-center gap-1.5 mb-2">
+                            <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 text-amber-500" />
+                            No active open folio. Stock only mode.
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold uppercase text-muted">Item</label>
+                                <select 
+                                    v-model="selectedItemId" 
+                                    class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800"
+                                >
+                                    <option v-for="item in minibarItems" :key="item.id" :value="item.id">
+                                        {{ item.name }} (₱{{ item.price }}) [Stock: {{ item.stockCount }}]
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold uppercase text-muted">Quantity</label>
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="number" 
+                                        v-model="consumeQty" 
+                                        min="1" 
+                                        class="w-16 px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800"
+                                    />
+                                    <UButton 
+                                        label="Log" 
+                                        size="xs" 
+                                        color="primary" 
+                                        icon="i-lucide-plus"
+                                        class="flex-1"
+                                        @click="logConsumable"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 

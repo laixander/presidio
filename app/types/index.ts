@@ -259,3 +259,24 @@ export interface AuditLog {
   entityId: number
   timestamp: string
 }
+
+// ── Inventory & Consumables Types ──────────────────────────────────────────
+
+export interface InventoryItem {
+  id: number
+  name: string
+  category: 'Mini Bar' | 'Amenities' | 'Other'
+  price: number
+  stockCount: number
+  maxStockCount: number
+}
+
+export interface ConsumableLog {
+  id: number
+  roomId: number
+  itemId: number
+  quantity: number
+  loggedBy: string
+  timestamp: string
+}
+

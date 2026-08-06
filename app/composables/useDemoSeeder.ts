@@ -19,6 +19,7 @@ export const useDemoSeeder = () => {
     const housekeepingStore = useHousekeepingStore()
     const settingsStore = useSettingsStore()
     const groupsStore = useGroupsStore()
+    const inventoryStore = useInventoryStore()
 
     /**
      * Procedurally generate and seed all stores with mock data.
@@ -269,6 +270,35 @@ export const useDemoSeeder = () => {
             }
         })
 
+        // 8. Inventory & Consumables
+        const inventoryCategories = ['Mini Bar', 'Amenities', 'Other'] as const
+        const generatedInventoryItems = Array.from({ length: Math.max(6, Math.floor(count / 2)) }, (_, i) => {
+            const maxStock = faker.number.int({ min: 20, max: 100 })
+            return {
+                id: i + 1,
+                name: faker.commerce.productName(),
+                category: faker.helpers.arrayElement(inventoryCategories),
+                price: faker.number.int({ min: 50, max: 1000 }),
+                stockCount: faker.number.int({ min: 0, max: maxStock }),
+                maxStockCount: maxStock
+            }
+        })
+        
+        const logCount = Math.max(4, Math.floor(count * 0.8))
+        const generatedInventoryLogs = Array.from({ length: logCount }, (_, i) => {
+            const room = faker.helpers.arrayElement(generatedRooms)
+            const item = faker.helpers.arrayElement(generatedInventoryItems)
+            const staff = housekeepingStaff.length > 0 ? faker.helpers.arrayElement(housekeepingStaff) : faker.helpers.arrayElement(generatedStaffUsers)
+            return {
+                id: i + 1,
+                roomId: room.id,
+                itemId: item.id,
+                quantity: faker.number.int({ min: 1, max: 5 }),
+                loggedBy: staff.name,
+                timestamp: faker.date.recent({ days: 3 }).toISOString()
+            }
+        })
+
         // Apply generated data to Pinia stores
         usersStore.seed(generatedStaffUsers as any[])
         roomsStore.seed(generatedRooms as any[], generatedRoomTypes as any[])
@@ -277,6 +307,7 @@ export const useDemoSeeder = () => {
         foliosStore.seed(generatedFolios as any[], generatedCharges as any[], generatedPayments as any[])
         housekeepingStore.seed(generatedTasks as any[], generatedAssignments as any[])
         groupsStore.seed(generatedGroups as any[], generatedBlocks as any[])
+        inventoryStore.seed(generatedInventoryItems, generatedInventoryLogs)
     }
 
     const resetAll = async () => {
@@ -289,6 +320,7 @@ export const useDemoSeeder = () => {
         housekeepingStore.clear()
         settingsStore.clear()
         groupsStore.clear()
+        inventoryStore.clear()
     }
 
     return {
