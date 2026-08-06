@@ -172,29 +172,29 @@ const reservationColumns: TableColumn<Reservation>[] = [
         <template #body v-if="group">
             <div class="flex flex-col gap-6 mt-2 pb-6">
                 <!-- Quick Actions -->
-                <div class="flex flex-wrap items-center gap-3 bg-neutral-50 dark:bg-neutral-900 p-4 rounded-xl border border-default">
-                    <div class="text-sm font-semibold text-muted mr-auto flex items-center gap-2">
+                <UCard :ui="{ body: 'sm:p-4 flex flex-col lg:flex-row gap-3' }">
+                    <div class="text-sm font-semibold text-muted flex items-center gap-2 w-full shadow-sm">
                         <UIcon name="i-lucide-zap" class="size-4" />
                         Quick Actions
                     </div>
-                    
-                    <UButton 
-                        label="Edit Details" 
-                        icon="i-lucide-pencil" 
-                        color="neutral" 
-                        variant="soft"
-                        @click="isEditModalOpen = true" 
-                    />
-                    
-                    <UButton 
-                        v-if="group.status !== 'Cancelled' && group.status !== 'Done'"
-                        label="Cancel Group" 
-                        icon="i-lucide-x-circle" 
-                        color="error" 
-                        variant="soft"
-                        @click="emit('cancelGroup', group.id)" 
-                    />
-                </div>
+                    <div class="flex gap-2">
+                        <UButton 
+                            label="Edit Details" 
+                            icon="i-lucide-pencil" 
+                            color="neutral" 
+                            variant="soft"
+                            @click="isEditModalOpen = true" 
+                        />
+                        <UButton 
+                            v-if="group.status !== 'Cancelled' && group.status !== 'Done'"
+                            label="Cancel Group" 
+                            icon="i-lucide-x-circle" 
+                            color="error" 
+                            variant="soft"
+                            @click="emit('cancelGroup', group.id)" 
+                        />
+                    </div>
+                </UCard>
 
                 <!-- Inline Info Section (Contact Info + Stay Details) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -7,8 +7,8 @@
  * KPIs and a comprehensive table of all guest folios.
  */
 import { h, ref, useTemplateRef } from 'vue'
-import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
-import { UButton, UDropdownMenu } from '#components'
+import type { TableColumn } from '@nuxt/ui'
+import { UButton } from '#components'
 
 import type { Folio } from '~/types'
 import StatusBadge from '~/components/StatusBadge.vue'
@@ -64,35 +64,7 @@ const columns: TableColumn<Folio>[] = [
         header: 'Status',
         cell: ({ row }) => h(StatusBadge, { status: row.original.status })
     },
-    {
-        id: 'actions',
-        meta: { class: { td: 'text-right' } },
-        cell: ({ row }) => {
-            const folio = row.original
-            const items: DropdownMenuItem[][] = [
-                [
-                    {
-                        label: 'View Folio Details',
-                        icon: 'i-lucide-receipt',
-                        onSelect: () => router.push(`/billing/folios/${folio.id}`)
-                    }
-                ]
-            ]
 
-            return h(UDropdownMenu, {
-                items,
-                content: { align: 'end' },
-                size: 'sm'
-            }, {
-                default: () => h(UButton, {
-                    icon: 'i-lucide-ellipsis-vertical',
-                    color: 'neutral',
-                    variant: 'ghost',
-                    size: 'sm'
-                })
-            })
-        }
-    }
 ]
 
 const table = useTemplateRef('table')
@@ -100,6 +72,14 @@ const globalFilter = ref('')
 const columnVisibility = ref({})
 const authStore = useDemoAuth()
 const isAuthorized = computed(() => ['Administrator', 'Billing'].includes(authStore.currentRole.value ?? ''))
+
+const isDetailsDrawerOpen = ref(false)
+const selectedFolio = ref<Folio | null>(null)
+
+const openFolioDetails = (folio: Folio) => {
+    selectedFolio.value = folio
+    isDetailsDrawerOpen.value = true
+}
 </script>
 
 <template>
@@ -157,7 +137,8 @@ const isAuthorized = computed(() => ['Administrator', 'Billing'].includes(authSt
             :loading="foliosStore.isLoading" 
             v-model:column-visibility="columnVisibility"
             v-model:global-filter="globalFilter" 
-            :ui="{ th: 'sm:px-6', td: 'sm:px-6' }" 
+            :ui="{ th: 'sm:px-6', td: 'sm:px-6', tr: 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50' }" 
+            @select="(e, row) => openFolioDetails(row.original)"
             class="flex-1 overflow-y-auto scrollbar"
         >
             <template #empty>
@@ -169,5 +150,6 @@ const isAuthorized = computed(() => ['Administrator', 'Billing'].includes(authSt
                 />
             </template>
         </UTable>
+        <FolioDetailsDrawer v-model:open="isDetailsDrawerOpen" :folio="selectedFolio" />
     </template>
 </template>
