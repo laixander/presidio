@@ -94,6 +94,7 @@ const arrivalColumns: TableColumn<typeof arrivalsList.value[0]>[] = [
                 label: 'Check-In',
                 size: 'xs',
                 color: 'primary',
+                'data-guide': 'btn-checkin',
                 onClick: () => { openCheckInModal(row.original.id) }
             })
         }

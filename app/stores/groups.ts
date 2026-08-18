@@ -6,12 +6,16 @@
 import { defineStore } from 'pinia'
 import type { GroupReservation, RoomBlock, ReservationStatus } from '~/types'
 
-const STORAGE_KEY_GROUPS = 'presidio-groups'
-const STORAGE_KEY_BLOCKS = 'presidio-blocks'
+const baseGroupsKey = 'presidio-groups'
+const baseBlocksKey = 'presidio-blocks'
 
 export const useGroupsStore = defineStore('groups', () => {
     const reservationsStore = useReservationsStore()
     const roomsStore = useRoomsStore()
+    const trainingStore = useTrainingStore()
+    
+    const getGroupsKey = () => trainingStore.activeSessionId ? `${baseGroupsKey}-${trainingStore.activeSessionId}` : baseGroupsKey
+    const getBlocksKey = () => trainingStore.activeSessionId ? `${baseBlocksKey}-${trainingStore.activeSessionId}` : baseBlocksKey
 
     // ============================================================================
     // State
@@ -26,16 +30,16 @@ export const useGroupsStore = defineStore('groups', () => {
     // ============================================================================
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(groups.value))
-            localStorage.setItem(STORAGE_KEY_BLOCKS, JSON.stringify(blocks.value))
+            localStorage.setItem(getGroupsKey(), JSON.stringify(groups.value))
+            localStorage.setItem(getBlocksKey(), JSON.stringify(blocks.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const storedGroups = localStorage.getItem(STORAGE_KEY_GROUPS)
+        const storedGroups = localStorage.getItem(getGroupsKey())
         if (storedGroups) groups.value = JSON.parse(storedGroups)
-        const storedBlocks = localStorage.getItem(STORAGE_KEY_BLOCKS)
+        const storedBlocks = localStorage.getItem(getBlocksKey())
         if (storedBlocks) blocks.value = JSON.parse(storedBlocks)
         isHydrated.value = true
     }
@@ -139,8 +143,8 @@ export const useGroupsStore = defineStore('groups', () => {
         groups.value = []
         blocks.value = []
         if (import.meta.client) {
-            localStorage.removeItem(STORAGE_KEY_GROUPS)
-            localStorage.removeItem(STORAGE_KEY_BLOCKS)
+            localStorage.removeItem(getGroupsKey())
+            localStorage.removeItem(getBlocksKey())
         }
     }
 

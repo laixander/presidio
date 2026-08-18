@@ -226,6 +226,18 @@ export const useSimulation = () => {
         appLogger.logSimulationEngineStepped()
     }
 
+    const executeSpecificEvent = (eventType: 'booking' | 'checkIn' | 'charge' | 'checkOut' | 'housekeeping') => {
+        let eventOccurred = false
+        switch (eventType) {
+            case 'booking': eventOccurred = generateBooking(); break
+            case 'checkIn': eventOccurred = generateCheckIn(); break
+            case 'charge': eventOccurred = generateCharge(); break
+            case 'checkOut': eventOccurred = generateCheckOut(); break
+            case 'housekeeping': eventOccurred = generateHousekeeping(); break
+        }
+        if (eventOccurred) eventsGenerated.value++
+    }
+
     return {
         state,
         tickCount,
@@ -238,6 +250,7 @@ export const useSimulation = () => {
         stop,
         reset,
         setSpeed,
-        step
+        step,
+        executeSpecificEvent
     }
 }

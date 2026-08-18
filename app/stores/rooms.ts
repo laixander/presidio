@@ -6,10 +6,14 @@
 import { defineStore } from 'pinia'
 import type { Room, RoomType } from '~/types'
 
-const ROOMS_KEY = 'presidio-rooms'
-const ROOM_TYPES_KEY = 'presidio-room-types'
+const baseRoomsKey = 'presidio-rooms'
+const baseRoomTypesKey = 'presidio-room-types'
 
 export const useRoomsStore = defineStore('rooms', () => {
+    const trainingStore = useTrainingStore()
+    const getRoomsKey = () => trainingStore.activeSessionId ? `${baseRoomsKey}-${trainingStore.activeSessionId}` : baseRoomsKey
+    const getRoomTypesKey = () => trainingStore.activeSessionId ? `${baseRoomTypesKey}-${trainingStore.activeSessionId}` : baseRoomTypesKey
+
     // ============================================================================
     // State
     // ============================================================================
@@ -24,15 +28,15 @@ export const useRoomsStore = defineStore('rooms', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms.value))
-            localStorage.setItem(ROOM_TYPES_KEY, JSON.stringify(roomTypes.value))
+            localStorage.setItem(getRoomsKey(), JSON.stringify(rooms.value))
+            localStorage.setItem(getRoomTypesKey(), JSON.stringify(roomTypes.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const storedRooms = localStorage.getItem(ROOMS_KEY)
-        const storedTypes = localStorage.getItem(ROOM_TYPES_KEY)
+        const storedRooms = localStorage.getItem(getRoomsKey())
+        const storedTypes = localStorage.getItem(getRoomTypesKey())
         if (storedRooms) rooms.value = JSON.parse(storedRooms)
         if (storedTypes) roomTypes.value = JSON.parse(storedTypes)
         isHydrated.value = true
@@ -136,8 +140,8 @@ export const useRoomsStore = defineStore('rooms', () => {
         rooms.value = []
         roomTypes.value = []
         if (import.meta.client) {
-            localStorage.removeItem(ROOMS_KEY)
-            localStorage.removeItem(ROOM_TYPES_KEY)
+            localStorage.removeItem(getRoomsKey())
+            localStorage.removeItem(getRoomTypesKey())
         }
     }
 

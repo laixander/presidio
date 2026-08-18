@@ -1,15 +1,16 @@
 // ============================================================================
 // Store: Reservations
 // ============================================================================
+// Store: Reservations
+// ============================================================================
 // Manages bookings, status transitions, and operational counts.
 
 import { defineStore } from 'pinia'
 import type { Reservation, ReservationStatus } from '~/types'
 
-const STORAGE_KEY = 'presidio-reservations'
-
 export const useReservationsStore = defineStore('reservations', () => {
-    // ============================================================================
+    const trainingStore = useTrainingStore()
+    const getStorageKey = () => trainingStore.activeSessionId ? `presidio-reservations-${trainingStore.activeSessionId}` : 'presidio-reservations'
     // State
     // ============================================================================
     const reservations = ref<Reservation[]>([])
@@ -22,13 +23,13 @@ export const useReservationsStore = defineStore('reservations', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations.value))
+            localStorage.setItem(getStorageKey(), JSON.stringify(reservations.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const stored = localStorage.getItem(STORAGE_KEY)
+        const stored = localStorage.getItem(getStorageKey())
         if (stored) reservations.value = JSON.parse(stored)
         isHydrated.value = true
     }
@@ -148,7 +149,7 @@ export const useReservationsStore = defineStore('reservations', () => {
     const clear = () => {
         reservations.value = []
         if (import.meta.client) {
-            localStorage.removeItem(STORAGE_KEY)
+            localStorage.removeItem(getStorageKey())
         }
     }
 

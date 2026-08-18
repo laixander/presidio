@@ -1,14 +1,18 @@
 // ============================================================================
 // Store: Housekeeping
 // ============================================================================
+// Store: Housekeeping
+// ============================================================================
 // Manages housekeeping tasks, room status updates, and task assignments.
 
 import { defineStore } from 'pinia'
-import type { HousekeepingTask, TaskStatus, StaffAssignment } from '~/types'
+import type { HousekeepingTask, TaskStatus, StaffAssignment, Room } from '~/types'
 
-const STORAGE_KEY = 'presidio-housekeeping'
+
 
 export const useHousekeepingStore = defineStore('housekeeping', () => {
+    const trainingStore = useTrainingStore()
+    const getStorageKey = () => trainingStore.activeSessionId ? `presidio-housekeeping-${trainingStore.activeSessionId}` : 'presidio-housekeeping'
     // ============================================================================
     // State
     // ============================================================================
@@ -23,7 +27,7 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const stored = localStorage.getItem(STORAGE_KEY)
+        const stored = localStorage.getItem(getStorageKey())
         if (stored) {
             const data = JSON.parse(stored)
             if (Array.isArray(data)) {
@@ -38,7 +42,7 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: tasks.value, assignments: assignments.value }))
+            localStorage.setItem(getStorageKey(), JSON.stringify({ tasks: tasks.value, assignments: assignments.value }))
         }
     }
 
@@ -194,7 +198,7 @@ export const useHousekeepingStore = defineStore('housekeeping', () => {
         tasks.value = []
         assignments.value = []
         if (import.meta.client) {
-            localStorage.removeItem(STORAGE_KEY)
+            localStorage.removeItem(getStorageKey())
         }
     }
 

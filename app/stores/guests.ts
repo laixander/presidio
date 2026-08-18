@@ -1,15 +1,16 @@
 // ============================================================================
 // Store: Guests
 // ============================================================================
+// Store: Guests
+// ============================================================================
 // Manages guest profiles, VIP filtering, and search.
 
 import { defineStore } from 'pinia'
 import type { Guest } from '~/types'
 
-const STORAGE_KEY = 'presidio-guests'
-
 export const useGuestsStore = defineStore('guests', () => {
-    // ============================================================================
+    const trainingStore = useTrainingStore()
+    const getStorageKey = () => trainingStore.activeSessionId ? `presidio-guests-${trainingStore.activeSessionId}` : 'presidio-guests'
     // State
     // ============================================================================
     const guests = ref<Guest[]>([])
@@ -22,13 +23,13 @@ export const useGuestsStore = defineStore('guests', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(guests.value))
+            localStorage.setItem(getStorageKey(), JSON.stringify(guests.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const stored = localStorage.getItem(STORAGE_KEY)
+        const stored = localStorage.getItem(getStorageKey())
         if (stored) guests.value = JSON.parse(stored)
         isHydrated.value = true
     }
@@ -87,7 +88,7 @@ export const useGuestsStore = defineStore('guests', () => {
     const clear = () => {
         guests.value = []
         if (import.meta.client) {
-            localStorage.removeItem(STORAGE_KEY)
+            localStorage.removeItem(getStorageKey())
         }
     }
 

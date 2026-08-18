@@ -6,10 +6,14 @@
 import { defineStore } from 'pinia'
 import type { InventoryItem, ConsumableLog } from '~/types'
 
-const ITEMS_KEY = 'presidio-inventory-items'
-const LOGS_KEY = 'presidio-inventory-logs'
+const baseItemsKey = 'presidio-inventory-items'
+const baseLogsKey = 'presidio-inventory-logs'
 
 export const useInventoryStore = defineStore('inventory', () => {
+    const trainingStore = useTrainingStore()
+    const getItemsKey = () => trainingStore.activeSessionId ? `${baseItemsKey}-${trainingStore.activeSessionId}` : baseItemsKey
+    const getLogsKey = () => trainingStore.activeSessionId ? `${baseLogsKey}-${trainingStore.activeSessionId}` : baseLogsKey
+
     const items = ref<InventoryItem[]>([])
     const logs = ref<ConsumableLog[]>([])
     const isHydrated = ref(false)
@@ -20,8 +24,8 @@ export const useInventoryStore = defineStore('inventory', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(ITEMS_KEY, JSON.stringify(items.value))
-            localStorage.setItem(LOGS_KEY, JSON.stringify(logs.value))
+            localStorage.setItem(getItemsKey(), JSON.stringify(items.value))
+            localStorage.setItem(getLogsKey(), JSON.stringify(logs.value))
         }
     }
 
@@ -56,8 +60,8 @@ export const useInventoryStore = defineStore('inventory', () => {
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const storedItems = localStorage.getItem(ITEMS_KEY)
-        const storedLogs = localStorage.getItem(LOGS_KEY)
+        const storedItems = localStorage.getItem(getItemsKey())
+        const storedLogs = localStorage.getItem(getLogsKey())
         
         if (storedItems) items.value = JSON.parse(storedItems)
         if (storedLogs) logs.value = JSON.parse(storedLogs)
@@ -126,8 +130,8 @@ export const useInventoryStore = defineStore('inventory', () => {
         items.value = []
         logs.value = []
         if (import.meta.client) {
-            localStorage.removeItem(ITEMS_KEY)
-            localStorage.removeItem(LOGS_KEY)
+            localStorage.removeItem(getItemsKey())
+            localStorage.removeItem(getLogsKey())
         }
     }
 

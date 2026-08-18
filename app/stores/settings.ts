@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-const SETTINGS_KEY = 'presidio-settings'
+const baseSettingsKey = 'presidio-settings'
 
 export interface AppSettings {
     hotelName: string
@@ -23,6 +23,9 @@ const defaultSettings: AppSettings = {
 }
 
 export const useSettingsStore = defineStore('settings', () => {
+    const trainingStore = useTrainingStore()
+    const getSettingsKey = () => trainingStore.activeSessionId ? `${baseSettingsKey}-${trainingStore.activeSessionId}` : baseSettingsKey
+
     // ============================================================================
     // State
     // ============================================================================
@@ -34,13 +37,13 @@ export const useSettingsStore = defineStore('settings', () => {
     // ============================================================================
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings.value))
+            localStorage.setItem(getSettingsKey(), JSON.stringify(settings.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const stored = localStorage.getItem(SETTINGS_KEY)
+        const stored = localStorage.getItem(getSettingsKey())
         if (stored) {
             settings.value = JSON.parse(stored)
         }
@@ -58,7 +61,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const clear = () => {
         settings.value = { ...defaultSettings }
         if (import.meta.client) {
-            localStorage.removeItem(SETTINGS_KEY)
+            localStorage.removeItem(getSettingsKey())
         }
     }
 

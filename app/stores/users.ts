@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import type { StaffUser, SystemRole } from '~/types'
 
-const STORAGE_KEY = 'presidio-users'
-
 export const useUsersStore = defineStore('users', () => {
+    const trainingStore = useTrainingStore()
+    const getStorageKey = () => trainingStore.activeSessionId ? `presidio-users-${trainingStore.activeSessionId}` : 'presidio-users'
+
     // ============================================================================
     // State
     // ============================================================================
@@ -17,13 +18,13 @@ export const useUsersStore = defineStore('users', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(users.value))
+            localStorage.setItem(getStorageKey(), JSON.stringify(users.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const stored = localStorage.getItem(STORAGE_KEY)
+        const stored = localStorage.getItem(getStorageKey())
         if (stored) {
             users.value = JSON.parse(stored)
         }
@@ -44,8 +45,8 @@ export const useUsersStore = defineStore('users', () => {
     const addUser = (userData: Omit<StaffUser, 'id'>) => {
         const newId = users.value.length > 0 ? Math.max(...users.value.map(u => u.id)) + 1 : 1
         const now = new Date().toISOString()
-        const newUser: StaffUser = { 
-            id: newId, 
+        const newUser: StaffUser = {
+            id: newId,
             ...userData,
             createdAt: now,
             updatedAt: now
@@ -85,7 +86,7 @@ export const useUsersStore = defineStore('users', () => {
     const clear = () => {
         users.value = []
         if (import.meta.client) {
-            localStorage.removeItem(STORAGE_KEY)
+            localStorage.removeItem(getStorageKey())
         }
     }
 

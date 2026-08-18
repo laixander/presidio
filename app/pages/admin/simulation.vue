@@ -15,12 +15,51 @@ definePageMeta({
 const sim = useSimulation()
 const loggerStore = useLogger('simulation') // Access the raw logs
 const events = useEvents()
+const trainingStore = useTrainingStore()
+const trainingSync = useTrainingSync()
+
+const newSessionId = ref(`TRN-${Math.floor(Math.random() * 10000)}`)
+
+const createSession = () => {
+    trainingStore.joinSession(newSessionId.value, 'Teacher')
+    trainingSync.connect()
+    useLogger('training').addLog(`Created training session: ${newSessionId.value}`, 'System', 'success')
+}
+
+const endSession = () => {
+    trainingSync.disconnect()
+    trainingStore.leaveSession()
+    sim.reset()
+}
 
 const isDrawerOpen = ref(false)
 
 events.on('viewSimulationLogs', () => {
     isDrawerOpen.value = true
 })
+
+// Wrap transport controls to broadcast
+const handleStart = () => {
+    sim.start()
+    trainingSync.broadcast({ type: 'START' })
+}
+const handlePause = () => {
+    sim.pause()
+    trainingSync.broadcast({ type: 'PAUSE' })
+}
+const handleReset = () => {
+    sim.reset()
+    trainingSync.broadcast({ type: 'RESET' })
+}
+const handleStep = () => {
+    sim.step()
+    trainingSync.broadcast({ type: 'STEP' })
+}
+const handleSpeedChange = () => {
+    const ms = sim.speedMs.value
+    sim.setSpeed(ms)
+    trainingSync.broadcast({ type: 'SET_SPEED', payload: { speedMs: ms } })
+}
 
 const totalWeight = computed(() => 
     sim.weights.value.booking + 
@@ -68,6 +107,31 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
                 </UButton>
             </Teleport>
         </ClientOnly>
+
+        <!-- Training Session Panel -->
+        <UCard variant="subtle" class="mb-8 border-primary-500/30 border">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <UIcon name="i-lucide-presentation" class="text-primary" />
+                        Training Session
+                    </h3>
+                    <p class="text-sm text-neutral-500 mt-1">
+                        {{ trainingStore.isTrainingActive ? `Active Session: ${trainingStore.activeSessionId}` : 'Create a session to sync simulation state with students.' }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <template v-if="!trainingStore.isTrainingActive">
+                        <UInput v-model="newSessionId" placeholder="Session ID" />
+                        <UButton color="primary" @click="createSession">Create Session</UButton>
+                    </template>
+                    <template v-else>
+                        <UBadge color="success" variant="soft">Connected (Teacher)</UBadge>
+                        <UButton color="error" variant="soft" @click="endSession">End Session</UButton>
+                    </template>
+                </div>
+            </div>
+        </UCard>
                 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <UCard variant="subtle" :ui="{ body: 'p-4 sm:p-5' }" class="shadow-sm">
@@ -133,7 +197,7 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
                     label="Reset"
                     color="neutral" 
                     variant="outline" 
-                    @click="sim.reset" 
+                    @click="handleReset" 
                     :ui="transportBtnUi"
                 />
                 <UButton 
@@ -141,7 +205,7 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
                     icon="i-lucide-play" 
                     label="Start"
                     color="primary" 
-                    @click="sim.start" 
+                    @click="handleStart" 
                     :ui="transportBtnUi"
                 />
                 <UButton 
@@ -149,7 +213,7 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
                     icon="i-lucide-pause" 
                     label="PAUSE"
                     color="warning" 
-                    @click="sim.pause" 
+                    @click="handlePause" 
                     :ui="transportBtnUi"
                 />
                 <UButton 
@@ -158,38 +222,44 @@ const transportBtnUi = { base: 'px-6 py-3 rounded-xl w-32 justify-center', leadi
                     color="primary" 
                     variant="soft" 
                     :disabled="sim.isRunning.value"
-                    @click="sim.step" 
+                    @click="handleStep" 
                     :ui="transportBtnUi"
                 />
             </div>
         </UCard>
 
-        <!-- Configuration -->
-        <div class="mt-8 grid grid-cols-1 gap-8">
-            <!-- Speed -->
-            <div>
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <UIcon name="i-lucide-gauge" class="text-primary" />
-                    Engine Speed
-                </h3>
-                <UCard variant="subtle" class="shadow-sm">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-semibold">Tick Interval</span>
-                        <span class="font-mono text-primary">{{ sim.speedMs.value }} ms</span>
-                    </div>
-                    <USlider 
-                        v-model="sim.speedMs.value" 
-                        :min="500" 
-                        :max="10000" 
-                        :step="500"
-                        @change="sim.setSpeed(sim.speedMs.value)"
-                        size="xs"
-                    />
-                    <div class="flex justify-between text-xs text-muted mt-2">
-                        <span>Fast (500ms)</span>
-                        <span>Slow (10s)</span>
-                    </div>
-                </UCard>
+
+        <!-- Configuration & Guides -->
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-8">
+                <!-- Speed -->
+                <div>
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <UIcon name="i-lucide-gauge" class="text-primary" />
+                        Engine Speed
+                    </h3>
+                    <UCard variant="subtle" class="shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold">Tick Interval</span>
+                            <span class="font-mono text-primary">{{ sim.speedMs.value }} ms</span>
+                        </div>
+                        <USlider 
+                            v-model="sim.speedMs.value" 
+                            :min="500" 
+                            :max="10000" 
+                            :step="500"
+                            @change="handleSpeedChange"
+                            size="xs"
+                        />
+                        <div class="flex justify-between text-xs text-muted mt-2">
+                            <span>Fast (500ms)</span>
+                            <span>Slow (10s)</span>
+                        </div>
+                    </UCard>
+                </div>
+                
+                <!-- Teacher Guides (Only show if session is active) -->
+                <TeacherGuidesPanel v-if="trainingStore.isTrainingActive" />
             </div>
 
             <!-- Event Weights -->

@@ -44,7 +44,7 @@ const allItems: NavigationMenuItem[][] = [
     ],
     [
         { type: 'label', label: 'Front Desk' },
-        { label: 'Front Desk', icon: 'i-lucide-concierge-bell', to: '/frontdesk' },
+        { label: 'Front Desk', icon: 'i-lucide-concierge-bell', to: '/frontdesk', 'data-guide': 'nav-frontdesk' },
         { label: 'Guests', icon: 'i-lucide-users', to: '/frontdesk/guests' },
         { label: 'Reservations', icon: 'i-lucide-calendar-check', to: '/frontdesk/bookings' }
     ],
@@ -55,7 +55,7 @@ const allItems: NavigationMenuItem[][] = [
     ],
     [
         { type: 'label', label: 'Housekeeping' },
-        { label: 'Housekeeping', icon: 'i-lucide-spray-can', to: '/housekeeping' },
+        { label: 'Housekeeping', icon: 'i-lucide-spray-can', to: '/housekeeping', 'data-guide': 'nav-housekeeping' },
         { label: 'Tasks Queue', icon: 'i-lucide-list-todo', to: '/housekeeping/tasks' },
         { label: 'Assignments', icon: 'i-lucide-users-round', to: '/housekeeping/assignments' }
     ]
@@ -117,6 +117,16 @@ const headerActions = computed(() => {
     }
     return []
 })
+const trainingStore = useTrainingStore()
+const trainingSync = useTrainingSync()
+
+// Ensure we stay connected if a session is active across navigation
+onMounted(() => {
+    if (trainingStore.isTrainingActive && !trainingSync.isConnected.value) {
+        trainingSync.connect()
+    }
+})
+
 </script>
 
 <template>
@@ -124,6 +134,8 @@ const headerActions = computed(() => {
         variant === 'inset' && 'bg-neutral-50 dark:bg-neutral-950',
         side === 'right' && 'flex-row-reverse'
     ]">
+        <TrainingSpotlight />
+        
         <USidebar v-model:open="open" :variant="variant" :collapsible="collapsible" :side="side" :ui="{ root: '[--sidebar-width-icon:4.5625rem]', container: 'h-full', header: 'px-5', body: 'scrollbar' }" close>
             <template #header="{ close }">
                 <div class="flex items-end gap-2.5">
@@ -133,6 +145,7 @@ const headerActions = computed(() => {
                 <UButton class="lg:hidden ml-auto" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Close sidebar" @click="close()"/>
             </template>
 
+            <!-- Need to render UNavigationMenu but we can pass html attributes via 'htmlAttrs' or just let Nuxt UI pass arbitrary props? Nuxt UI NavigationMenu items can take arbitrary props if mapped correctly, but since we used data-guide we can hope it binds it to the link. Or we can just use hrefs for targetting like a[href="/frontdesk"] -->
             <UNavigationMenu :items="items" orientation="vertical" :collapsed="isCollapsed" :tooltip="{
                 delayDuration: 200,
                 content: { side: 'right', sideOffset: 12 },
@@ -154,7 +167,15 @@ const headerActions = computed(() => {
         </USidebar>
 
         <div
-            class="flex-1 flex flex-col overflow-hidden lg:peer-data-[variant=floating]:my-4 peer-data-[variant=inset]:m-4 lg:peer-data-[variant=inset]:not-peer-data-[collapsible=offcanvas]:ms-0 peer-data-[variant=inset]:rounded-xl peer-data-[variant=inset]:shadow-sm peer-data-[variant=inset]:ring peer-data-[variant=inset]:ring-default bg-default">
+            class="flex-1 flex flex-col overflow-hidden lg:peer-data-[variant=floating]:my-4 peer-data-[variant=inset]:m-4 lg:peer-data-[variant=inset]:not-peer-data-[collapsible=offcanvas]:ms-0 peer-data-[variant=inset]:rounded-xl peer-data-[variant=inset]:shadow-sm peer-data-[variant=inset]:ring peer-data-[variant=inset]:ring-default bg-default relative">
+            
+            <!-- Training Mode Banner -->
+            <div v-if="trainingStore.isTrainingActive" class="w-full bg-warning-500/10 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300 py-1.5 px-4 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 border-b border-warning-500/20 z-50">
+                <UIcon name="i-lucide-triangle-alert" class="size-4" />
+                Training Mode: Session {{ trainingStore.activeSessionId }} Active. Data is sandboxed.
+                <UBadge size="sm" variant="soft" color="warning" class="ml-2">{{ trainingStore.role }}</UBadge>
+            </div>
+
             <div class="h-(--ui-header-height) shrink-0 flex items-center px-4 sm:pe-6" :class="[
                 variant !== 'floating' && 'border-b border-default',
                 side === 'right' && 'justify-end'

@@ -6,11 +6,16 @@
 import { defineStore } from 'pinia'
 import type { Folio, Charge, Payment } from '~/types'
 
-const FOLIOS_KEY = 'presidio-folios'
-const CHARGES_KEY = 'presidio-charges'
-const PAYMENTS_KEY = 'presidio-payments'
+const baseFoliosKey = 'presidio-folios'
+const baseChargesKey = 'presidio-charges'
+const basePaymentsKey = 'presidio-payments'
 
 export const useFoliosStore = defineStore('folios', () => {
+    const trainingStore = useTrainingStore()
+    const getFoliosKey = () => trainingStore.activeSessionId ? `${baseFoliosKey}-${trainingStore.activeSessionId}` : baseFoliosKey
+    const getChargesKey = () => trainingStore.activeSessionId ? `${baseChargesKey}-${trainingStore.activeSessionId}` : baseChargesKey
+    const getPaymentsKey = () => trainingStore.activeSessionId ? `${basePaymentsKey}-${trainingStore.activeSessionId}` : basePaymentsKey
+
     // ============================================================================
     // State
     // ============================================================================
@@ -26,17 +31,17 @@ export const useFoliosStore = defineStore('folios', () => {
 
     const persist = () => {
         if (import.meta.client) {
-            localStorage.setItem(FOLIOS_KEY, JSON.stringify(folios.value))
-            localStorage.setItem(CHARGES_KEY, JSON.stringify(charges.value))
-            localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments.value))
+            localStorage.setItem(getFoliosKey(), JSON.stringify(folios.value))
+            localStorage.setItem(getChargesKey(), JSON.stringify(charges.value))
+            localStorage.setItem(getPaymentsKey(), JSON.stringify(payments.value))
         }
     }
 
     const hydrate = () => {
         if (import.meta.server || isHydrated.value) return
-        const storedFolios = localStorage.getItem(FOLIOS_KEY)
-        const storedCharges = localStorage.getItem(CHARGES_KEY)
-        const storedPayments = localStorage.getItem(PAYMENTS_KEY)
+        const storedFolios = localStorage.getItem(getFoliosKey())
+        const storedCharges = localStorage.getItem(getChargesKey())
+        const storedPayments = localStorage.getItem(getPaymentsKey())
         if (storedFolios) folios.value = JSON.parse(storedFolios)
         if (storedCharges) charges.value = JSON.parse(storedCharges)
         if (storedPayments) payments.value = JSON.parse(storedPayments)
@@ -148,9 +153,9 @@ export const useFoliosStore = defineStore('folios', () => {
         charges.value = []
         payments.value = []
         if (import.meta.client) {
-            localStorage.removeItem(FOLIOS_KEY)
-            localStorage.removeItem(CHARGES_KEY)
-            localStorage.removeItem(PAYMENTS_KEY)
+            localStorage.removeItem(getFoliosKey())
+            localStorage.removeItem(getChargesKey())
+            localStorage.removeItem(getPaymentsKey())
         }
     }
 
