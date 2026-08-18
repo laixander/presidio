@@ -32,6 +32,19 @@ interface ChangelogEntry {
 
 const changelogs: ChangelogEntry[] = [
     {
+        date: 'August 18, 2026',
+        version: 'v1.1.0',
+        title: 'Simulation & Training Module',
+        description: 'Introduced a synchronized multi-client training environment with real-time teacher controls and student data segregation.',
+        changes: [
+            { type: 'feature', text: 'Implemented real-time Teacher-Student synchronization using Nuxt Nitro SSE.' },
+            { type: 'feature', text: 'Added TrainingSession setup and TeacherGuidesPanel for interactive guided elements.' },
+            { type: 'feature', text: 'Built TrainingSpotlight component for real-time UI highlighting on student screens.' },
+            { type: 'refactor', text: 'Refactored all Pinia stores to support dynamic storage key prefixing for student data segregation.' },
+            { type: 'feature', text: 'Updated Simulation Engine to broadcast events to all connected students.' }
+        ]
+    },
+    {
         date: 'August 5, 2026',
         version: 'v1.0.8',
         title: 'Housekeeping Overhaul & Front Desk Refinements',

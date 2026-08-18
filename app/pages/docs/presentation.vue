@@ -51,7 +51,7 @@ const slides: Slide[] = [
             highlights: [
                 { icon: 'i-lucide-building-2', label: 'Core Departments', value: '4' },
                 { icon: 'i-lucide-users', label: 'User Roles', value: '4' },
-                { icon: 'i-lucide-bot', label: 'Simulation Engine', value: '100% Auto' },
+                { icon: 'i-lucide-bot', label: 'Simulation & Training', value: '100% Auto' },
                 { icon: 'i-lucide-layout-dashboard', label: 'Dashboards', value: 'Unified' }
             ]
         }
@@ -113,19 +113,19 @@ const slides: Slide[] = [
     // Slide 4: Simulation Engine
     {
         id: 'simulation-engine',
-        badge: 'Automation',
+        badge: 'Automation & Training',
         badgeIcon: 'i-lucide-bot',
-        title: 'The Simulation Engine',
-        subtitle: 'A fully automated, background event generator mimicking real-world hotel operations under load.',
+        title: 'Simulation & Training Engine',
+        subtitle: 'A fully automated event generator and synchronized multi-client training environment.',
         gradient: 'from-emerald-500/10 via-transparent to-teal-500/10',
         accentColor: 'success',
         content: {
             type: 'features',
             items: [
-                { icon: 'i-lucide-sliders-horizontal', title: 'Configurable Weights', description: 'Adjust probabilities for Bookings, Check-ins, Check-outs, and Cleaning events on the fly.', color: 'primary' },
-                { icon: 'i-lucide-play', title: 'Transport Controls', description: 'Start, Pause, Step, or Reset the entire operational simulation at any time.', color: 'warning' },
-                { icon: 'i-lucide-terminal', title: 'Live Activity Logs', description: 'A real-time scrolling feed of all system actions (e.g. "Booking PRS-10022 Created").', color: 'success' },
-                { icon: 'i-lucide-zap', title: 'Store Reactivity', description: 'Engine dispatches directly to Pinia stores, instantly updating UI dashboards across the app.', color: 'error' }
+                { icon: 'i-lucide-users-2', title: 'Synchronized Training', description: 'Teachers can broadcast simulated operations to connected student clients in real-time.', color: 'primary' },
+                { icon: 'i-lucide-database', title: 'Data Sandboxing', description: 'Student data is isolated on the fly, preventing pollution of the main application state.', color: 'warning' },
+                { icon: 'i-lucide-mouse-pointer-click', title: 'Interactive Spotlights', description: 'Teachers can trigger UI highlights on student screens to guide them through complex workflows.', color: 'success' },
+                { icon: 'i-lucide-sliders-horizontal', title: 'Configurable Automation', description: 'Adjust event probabilities and speeds to stress-test workflows or train staff.', color: 'error' }
             ]
         }
     },

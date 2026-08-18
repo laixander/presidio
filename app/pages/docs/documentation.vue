@@ -90,19 +90,19 @@ const modulesData = [
   },
   {
     id: 5,
-    title: 'Simulation Engine',
+    title: 'Simulation & Training Engine',
     icon: 'i-lucide-bot',
     color: 'pink',
-    desc: 'A powerful automated engine that generates realistic hotel events based on configurable weights.',
+    desc: 'A powerful automated engine that generates realistic hotel events and facilitates synchronized, multi-client training sessions.',
     features: [
       'Auto-generation of Bookings, Check-ins, and Check-outs',
-      'Configurable event probability weights',
-      'Transport controls (Start, Step, Stop, Reset)',
-      'Real-time event logging and backlog tracking'
+      'Real-time synchronized training broadcasts (Teacher/Student)',
+      'Dynamic data sandboxing for isolated student environments',
+      'Teacher-guided UI highlighting and overlays'
     ],
     channels: [
       { name: 'Simulation Logs', desc: 'Real-time feed of all engine-generated events and state changes.' },
-      { name: 'Store Mutations', desc: 'Direct state updates mimicking real user interactions.' }
+      { name: 'Training Sync (SSE)', desc: 'Server-Sent Events streaming commands to connected student clients.' }
     ]
   }
 ]
@@ -189,6 +189,17 @@ const personas = [
       'Monitor room cleaning queue',
       'Update room status',
       'Flag rooms for maintenance'
+    ]
+  },
+  {
+    role: 'Teacher / Trainer',
+    icon: 'i-lucide-graduation-cap',
+    color: 'pink',
+    label: 'Education',
+    tasks: [
+      'Create and manage training sessions',
+      'Broadcast simulation events to students',
+      'Trigger guided UI highlights'
     ]
   }
 ] as any

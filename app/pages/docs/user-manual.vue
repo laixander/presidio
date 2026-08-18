@@ -24,7 +24,7 @@ const items = [
     { label: 'Front Desk', icon: 'i-lucide-concierge-bell', slot: 'frontdesk' },
     { label: 'Billing Officer', icon: 'i-lucide-receipt', slot: 'billing' },
     { label: 'Housekeeping', icon: 'i-lucide-spray-can', slot: 'housekeeping' },
-    { label: 'Simulation Engine', icon: 'i-lucide-bot', slot: 'simulation' }
+    { label: 'Simulation & Training', icon: 'i-lucide-bot', slot: 'simulation' }
 ]
 </script>
 
@@ -224,26 +224,41 @@ const items = [
                             <UIcon name="i-lucide-bot" class="size-8 text-primary" />
                         </div>
                         <div>
-                            <h3 class="text-2xl font-bold text-neutral-900 dark:text-white">Simulation Engine</h3>
-                            <p class="text-sm text-neutral-500">Automated event generation for load testing and demonstrations.</p>
+                            <h3 class="text-2xl font-bold text-neutral-900 dark:text-white">Simulation & Training Engine</h3>
+                            <p class="text-sm text-neutral-500">Automated event generation and synchronized multi-client training sessions.</p>
                         </div>
                     </div>
 
                     <UCard variant="subtle">
                         <template #header>
-                            <h4 class="font-bold flex items-center gap-2"><UIcon name="i-lucide-play" class="text-primary size-5"/> Controlling the Simulation</h4>
+                            <h4 class="font-bold flex items-center gap-2"><UIcon name="i-lucide-play" class="text-primary size-5"/> Running a Training Session (Teacher)</h4>
                         </template>
                         <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                            The Simulation Engine generates realistic hotel operations in the background. It is ideal for testing the reactive updates across multiple dashboards simultaneously.
+                            Teachers can run live, interactive hotel simulations that synchronize in real-time with connected student sessions.
                         </p>
                         <ol class="space-y-4 list-decimal list-outside ml-4 text-sm text-neutral-700 dark:text-neutral-300">
-                            <li class="pl-2">Open the <UBadge variant="soft">Simulation Panel</UBadge> from the sidebar.</li>
-                            <li class="pl-2">Use the Transport Controls to <strong>Start</strong>, <strong>Pause</strong>, or <strong>Step</strong> through operations.</li>
-                            <li class="pl-2">Adjust the probability weights to control the frequency of specific events (e.g., increase the Check-In weight to simulate a rush hour).</li>
-                            <li class="pl-2">Watch the real-time activity log feed to observe the automated actions (Bookings created, rooms cleaned, folios charged).</li>
-                            <li class="pl-2">Click <strong>Reset</strong> to halt the engine and clear all mock data, returning the system to a clean state.</li>
+                            <li class="pl-2">Navigate to <UBadge variant="soft">Admin</UBadge> &gt; <UBadge variant="soft">Engine Control</UBadge>.</li>
+                            <li class="pl-2">Click to create a new training session. The system will generate a unique Session ID.</li>
+                            <li class="pl-2">Share this Session ID with your students.</li>
+                            <li class="pl-2">Use the Transport Controls (<strong>Start</strong>, <strong>Pause</strong>, <strong>Step</strong>) to run the simulation. The events will be broadcasted to all connected students.</li>
+                            <li class="pl-2">Use the <strong>Teacher Guides Panel</strong> to explicitly highlight UI elements (like the "Check-In" button) on student screens.</li>
                         </ol>
-                        <UAlert title="Reactivity Showcase" description="While the simulation is running, try opening the Front Desk or Housekeeping dashboards in a separate window. You will see rooms changing status and guests arriving in real-time." icon="i-lucide-zap" color="primary" variant="soft" class="mt-6" />
+                    </UCard>
+
+                    <UCard variant="subtle">
+                        <template #header>
+                            <h4 class="font-bold flex items-center gap-2"><UIcon name="i-lucide-users" class="text-primary size-5"/> Joining a Training Session (Student)</h4>
+                        </template>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                            Students can join a live simulation. Their local data is instantly sandboxed to preserve the main system data.
+                        </p>
+                        <ol class="space-y-4 list-decimal list-outside ml-4 text-sm text-neutral-700 dark:text-neutral-300">
+                            <li class="pl-2">Navigate to the <UBadge variant="soft">Training Join Portal</UBadge> at <code>/training/join</code>.</li>
+                            <li class="pl-2">Enter your Name and the Session ID provided by your teacher.</li>
+                            <li class="pl-2">Your application state will be swapped to a clean slate, and you will see a persistent Training Mode banner.</li>
+                            <li class="pl-2">As the teacher runs the simulation or highlights UI elements, your browser will sync in real-time via SSE.</li>
+                        </ol>
+                        <UAlert title="Data Segregation" description="While in an active training session, your local Pinia stores use a dynamically prefixed storage key. Your main hotel data is completely isolated and safe." icon="i-lucide-shield-check" color="success" variant="soft" class="mt-6" />
                     </UCard>
                 </div>
             </template>
